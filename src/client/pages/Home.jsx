@@ -3,12 +3,11 @@ import BottomNavigator from "../component/BottomNavigator.jsx";
 import Header from "../component/Header.jsx";
 
 
-
 function Home() {
     return (
         <div>
-<Header/>
-            <BottomNavigator />
+            <Header/>
+            <BottomNavigator/>
             <div>Home</div>
         </div>
     )
