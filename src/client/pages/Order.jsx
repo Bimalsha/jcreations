@@ -1,13 +1,13 @@
 import React from 'react'
 import BottomNavigator from "../component/BottomNavigator.jsx";
 
-function Home() {
+function Order() {
     return (
         <div>
-            <BottomNavigator />
-            <div>Home</div>
+            <BottomNavigator/>
+            <div>Order</div>
         </div>
     )
 }
 
-export default Home
+export default Order

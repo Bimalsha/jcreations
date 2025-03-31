@@ -1,13 +1,14 @@
 import React from 'react'
 import BottomNavigator from "../component/BottomNavigator.jsx";
 
-function Home() {
+function Account() {
     return (
         <div>
-            <BottomNavigator />
-            <div>Home</div>
+            <BottomNavigator/>
+            <div>Account</div>
+
         </div>
     )
 }
 
-export default Home
+export default Account
