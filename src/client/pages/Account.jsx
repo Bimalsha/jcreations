@@ -1,5 +1,5 @@
 import React from 'react'
-import BottomNavigator from "../component/BottomNavigator.jsx";
+
 
 function Account() {
     return (
