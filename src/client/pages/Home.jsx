@@ -1,6 +1,7 @@
 import React from 'react'
 import BottomNavigator from "../component/BottomNavigator.jsx";
 import Header from "../component/Header.jsx";
+import Hero from "../component/Hero.jsx";
 
 
 function Home() {
@@ -8,7 +9,10 @@ function Home() {
         <div>
             <Header/>
             <BottomNavigator/>
-            <div>Home</div>
+            <main>
+                <Hero/>
+
+            </main>
         </div>
     )
 }
