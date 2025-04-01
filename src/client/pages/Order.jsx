@@ -5,8 +5,8 @@ import Header from "../component/Header.jsx";
 function Order() {
     return (
         <div>
-            <Header/>
-            <BottomNavigator/>
+
+
             <div>Order</div>
         </div>
     )
