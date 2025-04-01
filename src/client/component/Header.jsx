@@ -40,7 +40,7 @@ function Header() {
                     </div>
                 </div>
 
-                <div className="relative w-full max-w-md lg:hidden md:block mt-4">
+                <div className="relative w-full  lg:hidden md:hidden justify-center flex mt-4 ">
                     <input
                         type="text"
                         placeholder="Search..."
