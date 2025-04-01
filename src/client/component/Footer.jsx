@@ -8,7 +8,7 @@ function Footer() {
                 <div className="flex flex-col md:flex-row justify-between items-center border-b border-gray-700 pb-6">
                     {/* Left Section */}
                     <div className="text-center md:text-left mb-4 md:mb-0">
-                        <p>Copyrights &copy; {new Date().getFullYear()} JCreations.</p>
+                        <p>Copyrights &copy;{new Date().getFullYear()} JCreations.</p>
                     </div>
 
                     {/* Right Section */}
