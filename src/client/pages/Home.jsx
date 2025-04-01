@@ -16,7 +16,7 @@ function Home() {
                 <Hero />
                 <Category />
                 <Newarrivals />
-                {/*<Allproducts />*/}
+                <Allproducts />
             </main>
         </div>
     )
