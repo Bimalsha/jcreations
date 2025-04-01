@@ -7,7 +7,7 @@ import {Link} from "react-router-dom";
 
 function Header() {
     return (
-        <header className="flex justify-center w-full px-2   py-3 bg-white shadow-md fixed">
+        <header className="flex justify-center w-full px-2  z-50  py-3 bg-white shadow-md fixed">
             {/* Logo */}
             <div className={'flex flex-col w-full lg:max-w-7xl '}>
                 <div className={'flex items-center justify-between'}>
@@ -40,7 +40,7 @@ function Header() {
                     </div>
                 </div>
 
-                <div className="relative w-full max-w-md lg:hidden md:block mt-4">
+                <div className="relative w-full  lg:hidden md:hidden justify-center flex mt-4 ">
                     <input
                         type="text"
                         placeholder="Search..."
