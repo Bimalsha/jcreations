@@ -13,7 +13,7 @@ function Category() {
                             Categories
                         </span>
 
-                        {/*<Categoryitem />*/}
+                        {<Categoryitem />}
 
                     </div>
                 </div>
