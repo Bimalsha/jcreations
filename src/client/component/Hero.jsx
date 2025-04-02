@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from "motion/react"
 import { Link } from "react-router-dom";
 import { FaArrowRightLong } from "react-icons/fa6";
 
@@ -27,7 +27,7 @@ function Hero() {
 
     return (
         <>
-            <section className="pt-32 flex justify-center">
+            <section className="pt-16 lg:pt12 flex justify-center">
                 <motion.div
                     className={'max-w-7xl w-full lg:flex md:flex justify-between hidden px-2'}
                     initial="hidden"
@@ -83,8 +83,8 @@ function Hero() {
 
                         <motion.div variants={item}>
                             <motion.div
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
+                                whileHover={{scale: 1.05}}
+                                whileTap={{scale: 0.95}}
                             >
                                 <Link to={'/'}
                                       className={'flex items-center gap-2 bg-[#F7A313] text-white rounded-bl-3xl rounded-tr-3xl justify-center px-6 py-3 mt-4 w-56'}>
@@ -109,19 +109,51 @@ function Hero() {
                     <motion.div
                         className={'w-1/2'}
                         variants={item}
-                        whileHover={{ scale: 1.02 }}
-                        transition={{ duration: 0.3 }}
+                        whileHover={{scale: 1.02}}
+                        transition={{duration: 0.3}}
                     >
                         <motion.img
                             src="../../../public/hero/herolg.webp"
                             alt="hero"
                             className={'w-full'}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.7 }}
+                            initial={{opacity: 0, scale: 0.95}}
+                            animate={{opacity: 1, scale: 1}}
+                            transition={{duration: 0.7}}
                         />
                     </motion.div>
                 </motion.div>
+                <div className={'p-2  lg:hidden md:hidden w-full'}>
+                    <div className="w-full  rounded-3xl shadow-lg overflow-hidden">
+                        <div className="relative">
+                            <img
+                                src="../../../public/hero/home%20back.webp"
+                                alt="Chocolate Cake"
+                                className="w-full h-[250px] object-cover rounded-3xl"
+                            />
+                            <div
+                                className="absolute top-8 right-8 bg-white p-2 rounded-lg shadow-md text-sm font-semibold text-gray-700">
+                                <div
+                                    className="absolute -top-3 -right-3 stamp text-white text-xs p-4  rounded-full font-bold">
+                                    %
+                                </div>
+                                <span className="text-2xl font-bold text-[#F7A313]">10%</span>
+                                <p className="text-sm font-medium">Discount <br/>for 2 Orders</p>
+                            </div>
+                            <div
+                                className="absolute bottom-4 left-4 p-2 rounded-lg shadow-md text-sm font-semibold text-gray-700">
+                                <span className={'font-bold leading-tight text-white mt-6 0  text-2xl'}>Be The <span
+                                    className={'text-[#F7A313]'}>First</span><br/> Delivery &<br/> Easy Pick Up</span>
+                            </div>
+                            <Link to={'/'}
+                                  className="absolute bottom-4 right-4 bg-[#F7A313] p-2 px-4 rounded-tl-3xl text-sm rounded-br-3xl text-white flex items-center gap-2">
+
+                                Order Now <FaArrowRightLong/>
+                            </Link>
+                        </div>
+
+                    </div>
+
+                </div>
             </section>
         </>
     )
