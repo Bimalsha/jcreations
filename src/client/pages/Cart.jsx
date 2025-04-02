@@ -5,8 +5,8 @@ import Header from "../component/Header.jsx";
 function Cart() {
     return (
         <div>
-            <Header/>
-            <BottomNavigator/>
+
+
             <div>Cart</div>
         </div>
     )
