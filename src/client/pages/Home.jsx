@@ -10,8 +10,8 @@ import Allproducts from '../component/Allproducts.jsx';
 function Home() {
     return (
         <div>
-            <Header />
-            <BottomNavigator />
+
+
             <main>
                 <Hero />
                 <Category />
