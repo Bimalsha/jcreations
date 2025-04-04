@@ -30,12 +30,14 @@ const OrderConfirmed = () => {
         </p>
 
         {/* Continue Shopping Button */}
-          <a href="/">
-              <button className="mt-8 px-20 py-3 bg-yellow-500 text-black font-medium rounded-3xl shadow hover:bg-yellow-600 transition">
-            Continue Shopping </button>
-          </a>
+        <a 
+          href="/"
+          className="inline-block mt-8 px-20 py-3 bg-yellow-500 text-black font-medium rounded-3xl shadow hover:bg-yellow-600 transition cursor-pointer"
+        >
+          Continue Shopping
+        </a>
 
-        {/* Contact Info */}
+        {/* Contact Information */}
         <p className="text-sm text-gray-400 mt-3 mb-6">
           Questions? Contact us at{" "}
           <a
