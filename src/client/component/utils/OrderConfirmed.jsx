@@ -8,7 +8,7 @@ const OrderConfirmed = () => {
         <div className="flex justify-center items-center mb-4">
           <div className="w-28 h-28 bg-green-100 rounded-full flex items-center justify-center">
             <img
-              src="/carticons/Checked Icon.png"
+              src="/carticons/Checked%20Icon.png"
               alt="Checked Icon"
               className="w-22 h-22"
             />
@@ -31,7 +31,7 @@ const OrderConfirmed = () => {
 
         {/* Continue Shopping Button */}
         <a 
-          href="/"
+          href="/public"
           className="inline-block mt-8 px-20 py-3 bg-yellow-500 text-black font-medium rounded-3xl shadow hover:bg-yellow-600 transition cursor-pointer"
         >
           Continue Shopping

@@ -2,12 +2,12 @@ import React, { useState } from 'react'
 import BottomNavigator from "../component/BottomNavigator.jsx";
 import Header from "../component/Header.jsx";
 import CartNavigator from '../component/utils/CartNavigator.jsx';
-import CartItemDemo from '../component/CartItemDemo.jsx';
-import OrderSummary from '../component/OrderSummery.jsx';
-import Additionalnotes from '../component/AdditionalNotes.jsx';
-import DeliveryInfo from '../component/DeliveryInfo.jsx';
-import PaymentMethodSelector from '../component/PaymentMethodSelector.jsx';
-import OrderConfirmed from '../component/OrderConfirmed.jsx';
+import CartItemDemo from '../component/utils/CartItemDemo.jsx';
+import OrderSummary from '../component/utils/OrderSummery.jsx';
+import Additionalnotes from '../component/utils/AdditionalNotes.jsx';
+import DeliveryInfo from '../component/utils/DeliveryInfo.jsx';
+import PaymentMethodSelector from '../component/utils/PaymentMethodSelector.jsx';
+import OrderConfirmed from '../component/utils/OrderConfirmed.jsx';
 
 function Cart() {
 
