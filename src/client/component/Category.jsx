@@ -13,13 +13,9 @@ function Category() {
                             Categories
                         </span>
 
-
-
-
                         <div className={'w-full flex justify-center'}>
                             <Categoryitem />
                         </div>
-
 
                     </div>
                 </div>
