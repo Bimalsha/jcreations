@@ -14,7 +14,7 @@ function Category() {
                         </span>
 
 
-                        {<Categoryitem />}
+
 
                         <div className={'w-full flex justify-center'}>
                             <Categoryitem />
