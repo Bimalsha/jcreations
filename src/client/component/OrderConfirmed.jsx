@@ -35,7 +35,7 @@ const OrderConfirmed = () => {
             Continue Shopping </button>
           </a>
 
-        {/* Contact Information */}
+        {/* Contact Info */}
         <p className="text-sm text-gray-400 mt-3 mb-6">
           Questions? Contact us at{" "}
           <a
