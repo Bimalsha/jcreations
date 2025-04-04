@@ -27,7 +27,7 @@ function Hero() {
 
     return (
         <>
-            <section className="pt-16 lg:pt12 flex justify-center">
+            <section className="pt-16 lg:pt-12 flex justify-center">
                 <motion.div
                     className={'max-w-7xl w-full lg:flex md:flex justify-between hidden px-2'}
                     initial="hidden"
