@@ -13,9 +13,9 @@ function Newitem() {
         >
             <div className="relative flex justify-center">
                 <motion.img
-                    src="../../../../public/pngtree-chocolate-cake-png-image_17407867.png"
+                    src="../../../../public/cake.jpg"
                     alt="Product"
-                    className="h-[200px] w-[200px] object-cover"
+                    className="h-[200px] w-[200px] object-cover rounded-3xl"
                     whileHover={{ scale: 1.05 }}
                     transition={{ duration: 0.2 }}
                 />

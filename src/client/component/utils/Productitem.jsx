@@ -5,7 +5,7 @@ function Productitem() {
     return (
         <>
             <motion.div
-                className="bg-white rounded-2xl shadow-md overflow-hidden flex"
+                className="bg-white rounded-2xl border-2 border-[#F0F0F0] overflow-hidden flex"
                 whileHover={{
                     scale: 1.02,
                     boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)"
@@ -26,9 +26,9 @@ function Productitem() {
                     </motion.div>
                     <div className={'w-full h-full flex justify-center items-center'}>
                         <motion.img
-                            src="../../../../public/pngtree-chocolate-cake-png-image_17407867.png"
+                            src="../../../../public/cake.jpg"
                             alt="Chocolate Cake"
-                            className="lg:w-[130px] lg:h-[130px] w-[90px] h-[90px] object-cover"
+                            className="lg:w-[130px] lg:h-[130px] w-[90px] h-[90px] object-cover rounded-b-2xl"
                             whileHover={{ scale: 1.1 }}
                             transition={{ type: "spring", stiffness: 300 }}
                         />
