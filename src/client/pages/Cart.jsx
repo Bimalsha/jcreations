@@ -187,7 +187,7 @@ function Cart() {
                 {/* Login Popup */}
                 {showLoginPopup && (
                     <div className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-4">
-                        <div className="bg-white rounded-lg shadow-2xl shadow-amber-400 p-4 md:p-6 w-full max-w-md animate-fade-in border border-gray-200 relative">
+                        <div className="bg-white rounded-2xl shadow-2xl shadow-amber-400 p-4 md:p-6 w-full max-w-md animate-fade-in border border-gray-200 relative">
                             <button 
                                 onClick={handleClosePopup}
                                 className="absolute top-2 right-2 text-red-500 hover:text-red-400 transition-colors"
