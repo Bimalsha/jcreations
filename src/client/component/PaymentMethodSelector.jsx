@@ -1,0 +1,27 @@
+import React from 'react';
+
+const PaymentMethodSelector = () => {
+  return (
+    <div className="bg-white border-1 border-gray-300 rounded-lg p-6 mx-auto">
+      <h3 className="text-lg font-semibold mb-4">Payment Method</h3>
+      <form className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-20">
+        <div className="form-group flex flex-col items-start">
+          <label className="flex items-center space-x-2">
+            <img src="public/carticons/Credit Card Icon.png" alt="Online Payment" className="w-6 h-6" />
+            <input type="radio" name="paymentMethod" value="online" className="form-radio text-blue-600" />
+            <span>Online Payment</span>
+          </label>
+        </div>
+        <div className="form-group flex flex-col items-start">
+          <label className="flex items-center space-x-2">
+            <img src="/public/carticons/Cash on Delivery Icon.png" alt="Cash on Delivery" className="w-6 h-6" />
+            <input type="radio" name="paymentMethod" value="cod" className="form-radio text-blue-600" />
+            <span>Cash on Delivery</span>
+          </label>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default PaymentMethodSelector;
