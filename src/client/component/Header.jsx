@@ -34,7 +34,7 @@ function Header() {
                         <Link to={'/cart'} className="p-2 shadow-lg shadow-[#FDEAC9] rounded-full hover:bg-[#F7A313]">
                             <LuShoppingBag className="text-[#000F20] w-4 lg:w-full" size={20}/>
                         </Link>
-                        <Link to={'/account'} className="p-2 shadow-lg shadow-[#FDEAC9] rounded-full hover:bg-[#F7A313]">
+                        <Link to={'/signin'} className="p-2 shadow-lg shadow-[#FDEAC9] rounded-full hover:bg-[#F7A313]">
                             <FiUser className="text-[#000F20] w-4 lg:w-full" size={20}/>
                         </Link>
                     </div>
