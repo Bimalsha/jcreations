@@ -7,6 +7,7 @@ import OrderSummary from '../component/OrderSummery.jsx';
 import Additionalnotes from '../component/AdditionalNotes.jsx';
 import DeliveryInfo from '../component/DeliveryInfo.jsx';
 import PaymentMethodSelector from '../component/PaymentMethodSelector.jsx';
+import OrderConfirmed from '../component/OrderConfirmed.jsx';
 
 function Cart() {
 
@@ -42,8 +43,8 @@ function Cart() {
         },
     ]);
     
-    // Add state to track whether to show cart items
-    const [showCartItems, setShowCartItems] = useState(true);
+    // Replace showCartItems with currentStep to track all three stages
+    const [currentStep, setCurrentStep] = useState(1);
 
     const handleRemove = (id) => {
         setCartItems(cartItems.filter((item) => item.id !== id));
@@ -73,26 +74,27 @@ function Cart() {
     const total = subtotal + shipping;
 
     const handleCheckout = () => {
-        if (showCartItems) {
-            // Hide cart items when proceeding to checkout
-            setShowCartItems(false);
+        if (currentStep === 1) {
+            // Move from cart to checkout
+            setCurrentStep(2);
             console.log("Proceeding to checkout with items:", cartItems);
-        } else {
-            // Handle the confirm order action
+        } else if (currentStep === 2) {
+            // Move from checkout to order confirmation
+            setCurrentStep(3);
             console.log("Order confirmed:", cartItems);
             // Add order confirmation logic here
         }
     };
 
     const handleBackToCart = () => {
-        setShowCartItems(true);
+        setCurrentStep(1);
     };
 
     return (
         <div>
             <main>
-                <CartNavigator currentStep={showCartItems ? 1 : 2} />
-                {showCartItems ? (
+                <CartNavigator currentStep={currentStep} />
+                {currentStep === 1 && (
                     // Original layout for cart view
                     <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-6 p-4">
                         <div className="md:w-3/5 transition-all duration-300 ease-in-out">
@@ -109,11 +111,13 @@ function Cart() {
                                 shipping={shipping}
                                 total={total}
                                 onCheckout={handleCheckout}
-                                isCheckout={!showCartItems}
+                                isCheckout={false}
                             />
                         </div>
                     </div>
-                ) : (
+                )}
+                
+                {currentStep === 2 && (
                     // Restructured layout for checkout view
                     <div className="max-w-6xl mx-auto p-4 transition-all duration-300 ease-in-out">
                         <div className="flex justify-start items-center mb-4">
@@ -139,10 +143,17 @@ function Cart() {
                                     shipping={shipping}
                                     total={total}
                                     onCheckout={handleCheckout}
-                                    isCheckout={!showCartItems}
+                                    isCheckout={true}
                                 />
                             </div>
                         </div>
+                    </div>
+                )}
+                
+                {currentStep === 3 && (
+                    // Order confirmation view
+                    <div className="max-w-6xl mx-auto p-4 transition-all duration-300 ease-in-out">
+                        <OrderConfirmed />
                     </div>
                 )}
             </main>
