@@ -9,6 +9,7 @@ import Header from './client/component/Header.jsx';
 import BottomNavigator from './client/component/BottomNavigator.jsx';
 import PageTransition from './client/component/utils/PageTransition.jsx';
 import SignIn from "./client/pages/SignIn.jsx";
+import SingleProduct from "./client/pages/SingleProduct.jsx";
 
 function AnimatedRoutes() {
     const location = useLocation();
@@ -20,6 +21,7 @@ function AnimatedRoutes() {
                 <Route path="/order" element={<Order />} />
                 <Route path="/account" element={<Account />} />
                 <Route path="/signin" element={<SignIn />} />
+                <Route path="/singleProduct" element={<SingleProduct />} />
             </Routes>
         </PageTransition>
     );
