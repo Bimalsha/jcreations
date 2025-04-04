@@ -7,14 +7,14 @@ const PaymentMethodSelector = () => {
       <form className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-20">
         <div className="form-group flex flex-col items-start">
           <label className="flex items-center space-x-2">
-            <img src="public/carticons/Credit Card Icon.png" alt="Online Payment" className="w-6 h-6" />
+            <img src="../../../../public/carticons/Credit%20Card%20Icon.png" alt="Online Payment" className="w-6 h-6" />
             <input type="radio" name="paymentMethod" value="online" className="form-radio text-blue-600" />
             <span>Online Payment</span>
           </label>
         </div>
         <div className="form-group flex flex-col items-start">
           <label className="flex items-center space-x-2">
-            <img src="/public/carticons/Cash on Delivery Icon.png" alt="Cash on Delivery" className="w-6 h-6" />
+            <img src="/carticons/Cash%20on%20Delivery%20Icon.png" alt="Cash on Delivery" className="w-6 h-6" />
             <input type="radio" name="paymentMethod" value="cod" className="form-radio text-blue-600" />
             <span>Cash on Delivery</span>
           </label>

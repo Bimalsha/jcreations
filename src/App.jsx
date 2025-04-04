@@ -12,7 +12,6 @@ import SignIn from "./client/pages/SignIn.jsx";
 
 function AnimatedRoutes() {
     const location = useLocation();
-
     return (
         <PageTransition>
             <Routes location={location} key={location.pathname}>

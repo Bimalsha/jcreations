@@ -14,7 +14,7 @@ const DeliveryInfoCard = () => {
                 id="name" 
                 name="name" 
                 placeholder="Enter your name" 
-                className="w-full px-3 py-2 border border-black rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-900 focus:border-indigo-900"
               />
             </div>
             <div className="space-y-2">
@@ -24,7 +24,7 @@ const DeliveryInfoCard = () => {
               <select 
                 id="location" 
                 name="location" 
-                className="w-full px-3 py-2 border border-black rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-900 focus:border-indigo-900"
               >
                 <option value="">Select</option>
                 <option value="city1">City 1</option>
@@ -37,7 +37,7 @@ const DeliveryInfoCard = () => {
                 type="datetime-local" 
                 id="deliveryDateTime" 
                 name="deliveryDateTime" 
-                className="w-full px-3 py-2 border border-black rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" 
+                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-900 focus:border-indigo-900"
               />
             </div>
           </div>
@@ -49,7 +49,7 @@ const DeliveryInfoCard = () => {
                 id="contactNumber" 
                 name="contactNumber" 
                 placeholder="Enter your contact number" 
-                className="w-full px-3 py-2 border border-black rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" 
+                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-900 focus:border-indigo-900"
               />
             </div>
             <div className="space-y-2">
@@ -59,7 +59,7 @@ const DeliveryInfoCard = () => {
                 id="address" 
                 name="address" 
                 placeholder="Enter your address" 
-                className="w-full px-3 py-2 border border-black rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" 
+                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-900 focus:border-indigo-900"
               />
             </div>
           </div>

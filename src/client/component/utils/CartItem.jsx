@@ -2,7 +2,7 @@ import React from "react";
 
 const CartItem = ({ item, onRemove, onIncreaseQuantity, onDecreaseQuantity }) => {
   return (
-    <div className="relative flex flex-col bg-white border border-gray-200 rounded-lg p-4 shadow-md mb-4">
+    <div className="relative flex flex-col bg-white border border-gray-300 rounded-lg p-4 mb-4">
       {/* Remove Button */}
       <button
         onClick={() => onRemove(item.id)}
