@@ -178,7 +178,7 @@ function Cart() {
                 )}
                 
                 {currentStep === 3 && (
-                    // Order confirmation 
+                    // Order confirmation hih
                     <div className="max-w-7xl mx-auto px-4 py-10 pt-20 md:p-20 transition-all duration-300 ease-in-out">
                         <OrderConfirmed />
                     </div>
