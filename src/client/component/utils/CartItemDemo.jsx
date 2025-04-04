@@ -1,5 +1,5 @@
 import React from "react";
-import CartItem from "./CartItem";
+import CartItem from "./CartItem.jsx";
 
 const CartItemDemo = ({ cartItems, onRemove, onIncreaseQuantity, onDecreaseQuantity }) => {
   return (
