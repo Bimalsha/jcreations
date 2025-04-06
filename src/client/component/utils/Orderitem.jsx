@@ -24,10 +24,10 @@ function Orderitem() {
                         transition={{duration: 0.2}}
                     />
                     <motion.dev className={"px-8"}>
-                        <div className={"font-bold"}>Order#: <span>123456</span></div>
-                        <div className={""}>Date: <span>March 28,2025</span></div>
+                        <div className={"font-bold"}>Order#:123456</div>
+                        <div className={""}>Date: March 28,2025</div>
                         <br/>
-                        <div className={""}>Status: <span>Delivered</span></div>
+                        <div className={""}>Status: Delivered</div>
                     </motion.dev>
                 </motion.div>
                 <motion.dev className={"justify-items-end"}>
