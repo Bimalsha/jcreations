@@ -11,7 +11,7 @@ function Dashboard() {
     return (
         <div className="flex">
             <Sidebar />
-            <div className="flex-grow p-6">
+            <div className="flex-grow">
                 <Routes>
                     <Route path="/" element={<DashboardMain />} />
                     <Route path="products" element={<Products />} />

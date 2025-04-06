@@ -9,7 +9,7 @@ import {BsBoxes} from "react-icons/bs";
 
 export default function Sidebar() {
     return (
-        <div className="w-64 h-screen bg-white border-r flex flex-col justify-between">
+        <div className="w-64 h-screen bg-white shadow-lg flex flex-col justify-between">
             <div>
                 <div className="flex items-center px-6 py-6">
                     <img src="/logo.png" alt="Logo" className="h-10 mr-3" />
