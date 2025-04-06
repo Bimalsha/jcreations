@@ -21,7 +21,7 @@ function AnimatedRoutes() {
                 <Route path="/order" element={<Order />} />
                 <Route path="/account" element={<Account />} />
                 <Route path="/signin" element={<SignIn />} />
-                <Route path="/singleProduct" element={<SingleProduct />} />
+                <Route path="/singleproduct" element={<SingleProduct />} />
             </Routes>
         </PageTransition>
     );
@@ -30,17 +30,18 @@ function AnimatedRoutes() {
 function App() {
     const location = useLocation();
     const isAuthPage = location.pathname === "/signin";
-33
+    const isSingleProductPage = location.pathname === "/singleproduct";
+
     return (
         <div className="flex flex-col min-h-screen">
-            {!isAuthPage && <Header />}
+            {!isAuthPage && !isSingleProductPage && <Header />}
 
-            <main className={`flex-grow ${!isAuthPage ? 'pt-16' : ''}`}>
+            <main className={`flex-grow ${!isAuthPage && !isSingleProductPage ? 'pt-16' : ''}`}>
                 <AnimatedRoutes />
             </main>
 
-            {!isAuthPage && <BottomNavigator />}
-            {!isAuthPage && <Footer />}
+            {!isAuthPage && !isSingleProductPage && <BottomNavigator />}
+            {!isAuthPage && !isSingleProductPage && <Footer />}
         </div>
     );
 }
