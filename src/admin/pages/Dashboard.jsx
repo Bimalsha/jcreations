@@ -1,5 +1,5 @@
 import React from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, Navigate } from 'react-router-dom';
 import Sidebar from '../component/Sidebar.jsx';
 import Products from '../component/Products.jsx';
 import Orders from '../component/Orders.jsx';
@@ -11,7 +11,7 @@ function Dashboard() {
     return (
         <div className="flex">
             <Sidebar />
-            <div className="flex-grow p-6">
+            <div className="flex-grow">
                 <Routes>
                     <Route path="/" element={<DashboardMain />} />
                     <Route path="products" element={<Products />} />
