@@ -34,9 +34,9 @@ function App() {
 
     return (
         <div className="flex flex-col min-h-screen">
-            {!isAuthPage && <Header />}
+            {!isAuthPage && !isSingleProductPage && <Header />}
 
-            <main className={`flex-grow ${!isAuthPage ? 'pt-16' : ''}`}>
+            <main className={`flex-grow ${!isAuthPage && !isSingleProductPage ? 'pt-16' : ''}`}>
                 <AnimatedRoutes />
             </main>
 
