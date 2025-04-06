@@ -6,8 +6,8 @@ import OrderConfirmation from '../component/OrderConfirmation.jsx';
 function Order() {
     return (
         <div>
-            <Header/>
-            <BottomNavigator/>
+
+
             <div>Order</div>
             <main>
                 <OrderConfirmation/>
