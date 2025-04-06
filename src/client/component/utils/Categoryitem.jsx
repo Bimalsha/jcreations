@@ -52,7 +52,7 @@ function Categoryitem() {
 
     return (
         <motion.div
-            className="w-full mt-4 overflow-hidden"
+            className="w-full mt-4 overflow-visible" // Changed overflow to visible
             initial="hidden"
             animate="visible"
             variants={container}
