@@ -1,11 +1,11 @@
 import React from 'react'
 import '../../../index.css';
 import {motion} from 'framer-motion';
-import {Link} from "react-router-dom";
 import {FaArrowRightLong} from "react-icons/fa6";
 
+function Orderitem({ onViewDetails }) {
+    const orderId = "123456"; // This would come from props in a real application
 
-function Orderitem() {
     return (
         <motion.div
             className="bg-white shadow-lg rounded-3xl cursor-pointer hover:shadow-xl transition-shadow w-full"
@@ -23,19 +23,21 @@ function Orderitem() {
                         whileHover={{scale: 1.05}}
                         transition={{duration: 0.2}}
                     />
-                    <motion.dev className={"px-8"}>
-                        <div className={"font-bold"}>Order#:123456</div>
+                    <motion.div className={"px-8"}>
+                        <div className={"font-bold"}>Order#:{orderId}</div>
                         <div className={""}>Date: March 28,2025</div>
                         <br/>
                         <div className={""}>Status: Delivered</div>
-                    </motion.dev>
+                    </motion.div>
                 </motion.div>
-                <motion.dev className={"justify-items-end"}>
+                <motion.div className={"justify-items-end"}>
                     <div className={"text-2xl font-semibold"}>Rs.7400.00</div>
-                    <Link to={'/'}
-                          className={'flex items-center gap-2 bg-[#F7A313] text-white rounded-3xl justify-center px-6 py-3 mt-4 w-46'}>
+                    <button
+                        onClick={() => onViewDetails(orderId)}
+                        className={'flex items-center gap-2 bg-[#F7A313] text-white rounded-3xl justify-center px-6 py-3 mt-4 w-46 cursor-pointer'}
+                    >
                         View Details
-                        <motion.div
+                         <motion.div
                             animate={{
                                 x: [0, 5, 0]
                             }}
@@ -47,8 +49,8 @@ function Orderitem() {
                         >
                             <FaArrowRightLong/>
                         </motion.div>
-                    </Link>
-                </motion.dev>
+                    </button>
+                </motion.div>
             </div>
         </motion.div>
     )
