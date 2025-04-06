@@ -8,13 +8,13 @@ import {FaArrowRightLong} from "react-icons/fa6";
 function Orderitem() {
     return (
         <motion.div
-            className="bg-white shadow-lg rounded-3xl cursor-pointer hover:shadow-xl transition-shadow"
+            className="bg-white shadow-lg rounded-3xl cursor-pointer hover:shadow-xl transition-shadow w-full"
             whileHover={{
                 scale: 1.03,
                 transition: {duration: 0.3}
             }}
         >
-            <div className="relative  px-8 pt-4 pb-4 flex justify-between">
+            <div className="relative px-8 pt-4 pb-4 flex justify-between">
                 <motion.div className="flex">
                     <motion.img
                         src="../../../../public/pngtree-chocolate-cake-png-image_17407867.png"
@@ -31,7 +31,7 @@ function Orderitem() {
                     </motion.dev>
                 </motion.div>
                 <motion.dev className={"justify-items-end"}>
-                    <div className={"font-bold text-2xl"}>Rs.<span>7400</span>.00</div>
+                    <div className={"text-2xl font-semibold"}>Rs.7400.00</div>
                     <Link to={'/'}
                           className={'flex items-center gap-2 bg-[#F7A313] text-white rounded-3xl justify-center px-6 py-3 mt-4 w-46'}>
                         View Details
