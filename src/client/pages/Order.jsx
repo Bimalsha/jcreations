@@ -1,6 +1,7 @@
 import React from 'react'
 import BottomNavigator from "../component/BottomNavigator.jsx";
 import Header from "../component/Header.jsx";
+
 import Orders from "../component/Orders.jsx";
 
 function Order() {
@@ -13,7 +14,7 @@ function Order() {
             </div>
             <Orders/>
             </div>
-        </section>
+
     )
 }
 
