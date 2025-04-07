@@ -14,8 +14,8 @@ function itemOrdered() {
                 transition: {duration: 0.3}
             }}
         >
-            <div className="relative px-8 pt-4 pb-4 flex justify-between">
-                <motion.div className="flex">
+            <div className="relative px-8 pt-4 pb-4 lg:flex justify-between">
+                <motion.div className="flex ">
                     <motion.img
                         src="../../../../public/pngtree-chocolate-cake-png-image_17407867.png"
                         alt="Product"
@@ -28,7 +28,7 @@ function itemOrdered() {
                     </motion.dev>
                 </motion.div>
                 <motion.dev className={"justify-items-end"}>
-                    <div className={"text-xl"}>Rs.3500.00</div>
+                    <div className={"text-xl lg:text-start text-end"}>Rs.3500.00</div>
 
                 </motion.dev>
             </div>

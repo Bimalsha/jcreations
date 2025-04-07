@@ -14,7 +14,7 @@ function Orderitem({ onViewDetails }) {
                 transition: {duration: 0.3}
             }}
         >
-            <div className="relative px-8 pt-4 pb-4 flex justify-between">
+            <div className="relative px-8 pt-4 pb-4 lg:flex justify-between">
                 <motion.div className="flex">
                     <motion.img
                         src="../../../../public/pngtree-chocolate-cake-png-image_17407867.png"
@@ -30,8 +30,9 @@ function Orderitem({ onViewDetails }) {
                         <div className={""}>Status: Delivered</div>
                     </motion.div>
                 </motion.div>
+                <hr className={"border-1 border-gray-200 lg:hidden"}/>
                 <motion.div className={"justify-items-end"}>
-                    <div className={"text-2xl font-semibold"}>Rs.7400.00</div>
+                    <div className={"lg:text-2xl text-start lg:text-end font-semibold"}>Rs.7400.00</div>
                     <button
                         onClick={() => onViewDetails(orderId)}
                         className={'flex items-center gap-2 bg-[#F7A313] text-white rounded-3xl justify-center px-6 py-3 mt-4 w-46 cursor-pointer'}
