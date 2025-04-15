@@ -1,17 +1,32 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
-const categories = [
-    {icon: '/category/cake.svg', label: 'Cake'},
-    {icon: '/category/chocolate.svg', label: 'Chocolate'},
-    {icon: '/category/candle.svg', label: 'Candles'},
-    {icon: '/category/basket.svg', label: 'Groceries'},
-    {icon: '/category/sale.svg', label: 'Gift Items'},
-    {icon: '/category/menu.svg', label: 'Restaurant Menu'},
-];
 
 function Categoryitem() {
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
     const scrollRef = useRef(null);
+
+    // Fetch categories from API
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await fetch('https://jcreations.1000dtechnology.com/api/categories');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch categories');
+                }
+                const data = await response.json();
+                setCategories(data);
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCategories();
+    }, []);
+
 
     // Animation variants
     const container = {
@@ -76,8 +91,8 @@ function Categoryitem() {
                             transition={{ type: "spring", stiffness: 300 }}
                         >
                             <motion.img
-                                src={category.icon}
-                                alt={category.label}
+                                src={`https://jcreations.1000dtechnology.com/storage/${category.img}`}
+                                alt={category.name}
                                 className="w-16 h-16"
                                 animate={{ rotate: [0, 5, 0, -5, 0] }}
                                 transition={{
@@ -91,7 +106,7 @@ function Categoryitem() {
                             className="mt-2 text-center font-medium"
                             whileHover={{ color: "#F7A313" }}
                         >
-                            {category.label}
+                            {category.name}
                         </motion.span>
                     </motion.div>
                 ))}
@@ -121,8 +136,8 @@ function Categoryitem() {
                             }}
                         >
                             <motion.img
-                                src={category.icon}
-                                alt={category.label}
+                                src={`https://jcreations.1000dtechnology.com/storage/${category.img}`}
+                                alt={category.name}
                                 className="w-10 h-10"
                                 initial={{ opacity: 0, scale: 0 }}
                                 animate={{ opacity: 1, scale: 1 }}
@@ -133,7 +148,7 @@ function Categoryitem() {
                             className="mt-2 text-xs text-center"
                             whileHover={{ color: "#F7A313" }}
                         >
-                            {category.label}
+                            {category.name}
                         </motion.span>
                     </motion.div>
                 ))}

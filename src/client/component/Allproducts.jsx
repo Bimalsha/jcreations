@@ -12,9 +12,9 @@ function Allproducts() {
                         </span>
 
                         <div className={'grid lg:grid-cols-2 mt-4 gap-4'}>
-                            {Array(10).fill().map((_, index) => (
-                                <Productitem key={index} />
-                            ))}
+                            
+                                <Productitem />
+                       
                         </div>
 
 

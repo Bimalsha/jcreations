@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 function AdminLogin() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         // Disable scrolling
@@ -15,9 +17,33 @@ function AdminLogin() {
         };
     }, []);
 
-    const handleLogin = (e) => {
+     const handleLogin = async (e) => {
         e.preventDefault();
-        // Add login logic here
+        setLoading(true);
+    
+        try {
+            const response = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            });
+    
+            const data = await response.json();
+    
+            if (response.ok) {
+                console.log('Login successful:', data.message);
+                window.location.href = '/admin/dashboard';
+            }else{
+                console.log('Login failed:', data.message);
+            }
+    
+        } catch (err) {
+            console.error('Login error:', err.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -45,6 +71,8 @@ function AdminLogin() {
                 <form className="space-y-4" onSubmit={handleLogin}>
                     <motion.input
                         type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         placeholder="enter your email"
                         className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
                         initial={{ opacity: 0, x: -50 }}
@@ -53,6 +81,8 @@ function AdminLogin() {
                     />
                     <motion.input
                         type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         placeholder="enter your password"
                         className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
                         initial={{ opacity: 0, x: -50 }}
@@ -61,12 +91,13 @@ function AdminLogin() {
                     />
                     <motion.button
                         type="submit"
-                        className="w-full bg-black text-white py-2 rounded hover:bg-gray-900 transition cursor-pointer"
+                        className="w-full bg-black text-white py-2 rounded hover:bg-gray-900 transition cursor-pointer disabled:opacity-50"
                         initial={{ opacity: 0, x: -50 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.5, delay: 0.8 }}
+                        disabled={loading}
                     >
-                        Login
+                        {loading ? 'Logging in...' : 'Login'}
                     </motion.button>
                 </form>
             </motion.div>
