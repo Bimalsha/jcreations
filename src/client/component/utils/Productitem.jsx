@@ -104,7 +104,7 @@ const handleAddToCart = async (productId) => {
               <motion.img
                 src={`https://jcreations.1000dtechnology.com/storage/${product.images[0]}`}
                 alt={product.name}
-                className="lg:w-[130px] lg:h-[130px] w-[90px] h-[90px] object-cover rounded-b-2xl"
+                className="lg:w-[130px] lg:h-[130px] w-[90px] h-[90px] object-cover rounded-2xl"
                 whileHover={{ scale: 1.1 }}
                 transition={{ type: "spring", stiffness: 300 }}
               />
