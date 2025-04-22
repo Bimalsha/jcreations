@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import api from "../../../utils/axios.js";
 
 
 function Categoryitem() {
@@ -11,7 +12,7 @@ function Categoryitem() {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await fetch('https://jcreations.1000dtechnology.com/api/categories');
+                const response = await api.get('/categories');
                 if (!response.ok) {
                     throw new Error('Failed to fetch categories');
                 }

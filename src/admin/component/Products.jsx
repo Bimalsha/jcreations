@@ -1,48 +1,19 @@
 import React, { useState } from 'react'
 import { LuCodesandbox } from "react-icons/lu";
-import { FaRegWindowClose } from "react-icons/fa";
+import { FaMoneyBillWave, FaRegWindowClose, FaTags } from "react-icons/fa";
 import { AiOutlineReload } from "react-icons/ai";
 import { BsThreeDots, BsArrowLeft } from "react-icons/bs";
 import AddProductForm from './utils/AddProductForm .jsx';
-import UpdateProductForm from './utils/UpdateProductForm .jsx';
-import ProductPreviewModal from './utils/ProductPreviewModal.jsx';
 
 function Products() {
     const [showAddForm, setShowAddForm] = useState(false);
-    const [updateProduct, setUpdateProduct] = useState(null);
-    const [previewProduct, setPreviewProduct] = useState(null);
-    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
     const handleAddProductClick = () => {
         setShowAddForm(true);
-        setUpdateProduct(null);
-    };
-
-    const handleUpdateProductClick = (product) => {
-        console.log("Update clicked for product:", product.id);
-        setUpdateProduct(product);
-        setShowAddForm(false);
-    };
-
-    const handlePreviewClick = (product) => {
-        setPreviewProduct({
-            ...product,
-            description: "Delicious cake with premium ingredients.",
-            offerPrice: product.price * 0.85,
-            discountPrice: product.price * 0.85,
-            discount: "15",
-            listDate: "2024-05-21"
-        });
-        setIsPreviewOpen(true);
-    };
-
-    const handleClosePreview = () => {
-        setIsPreviewOpen(false);
     };
 
     const handleBackToProducts = () => {
         setShowAddForm(false);
-        setUpdateProduct(null);
     };
 
     const products = [
@@ -71,7 +42,7 @@ function Products() {
 
     return (
         <div className={'flex flex-col'}>
-            {!showAddForm && !updateProduct && (
+            {!showAddForm && (
                 <div className="bg-[#F2EFE7] w-full h-[200px] px-6 pt-6">
                     <div className="flex items-center justify-between px-6 pt-6 mb-6">
                         <h2 className="text-2xl font-semibold text-[#333333] mt-[-10px] ml-[-20px]">
@@ -104,26 +75,16 @@ function Products() {
                 </div>
             )}
 
-            <div className={`h-full w-full ${(!showAddForm && !updateProduct) ? 'bg-white rounded-b-2xl' : 'rounded-2xl'}`}>
+            <div className={`h-full w-full bg-white ${!showAddForm ? 'rounded-b-2xl' : 'rounded-2xl'}`}>
                 {showAddForm ? (
-                    <div className="w-full pt-4 px-4">
+                    <div className="px-8 pt-4">
                         <button
                             onClick={handleBackToProducts}
-                            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 cursor-pointer ml-4"
+                            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4"
                         >
                             <BsArrowLeft /> Back to Products
                         </button>
                         <AddProductForm />
-                    </div>
-                ) : updateProduct ? (
-                    <div className="w-full pt-4 px-4">
-                        <button
-                            onClick={handleBackToProducts}
-                            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 cursor-pointer ml-4"
-                        >
-                            <BsArrowLeft /> Back to Products
-                        </button>
-                        <UpdateProductForm product={updateProduct} />
                     </div>
                 ) : (
                     <>
@@ -190,22 +151,10 @@ function Products() {
                                                 />
                                             </td>
                                             <td className="px-4 py-2">
-                                                <button
-                                                    onClick={() => handlePreviewClick(product)}
-                                                    className="w-full h-full flex justify-center items-center cursor-pointer"
-                                                    aria-label={`View details of ${product.name}`}
-                                                >
-                                                    <BsThreeDots className="text-blue-400 text-lg hover:text-blue-600"/>
-                                                </button>
+                                                <BsThreeDots className="text-blue-400 text-lg cursor-pointer"/>
                                             </td>
                                             <td className="px-4 py-2">
-                                                <button
-                                                    onClick={() => handleUpdateProductClick(product)}
-                                                    className="w-full h-full flex justify-center items-center cursor-pointer"
-                                                    aria-label={`Update ${product.name}`}
-                                                >
-                                                    <AiOutlineReload className="text-yellow-500 text-lg hover:text-yellow-600"/>
-                                                </button>
+                                                <AiOutlineReload className="text-yellow-500 text-lg cursor-pointer"/>
                                             </td>
                                             <td className="px-4 py-2">
                                                 <span
@@ -223,13 +172,6 @@ function Products() {
                     </>
                 )}
             </div>
-
-            {/* Product Preview Modal */}
-            <ProductPreviewModal
-                isOpen={isPreviewOpen}
-                onClose={handleClosePreview}
-                product={previewProduct || {}}
-            />
         </div>
     )
 }
