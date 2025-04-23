@@ -18,6 +18,10 @@ const ProductPreviewModal = ({ isOpen, onClose, product }) => {
                         src={product.image}
                         alt={product.name}
                         className="w-24 h-24 object-cover rounded-lg mb-4 shadow-md"
+                        onError={(e) => {
+                            e.target.onerror = null; // Prevents infinite loop
+                            e.target.src = "/logo.png"; // Default image path
+                        }}
                     />
                     <h2 className="text-lg font-semibold">{product.name}</h2>
                     <p className="text-xl font-bold text-gray-800 mt-1">LKR {product.offerPrice}</p>

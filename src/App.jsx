@@ -12,7 +12,6 @@ import SignIn from "./client/pages/SignIn.jsx";
 import SingleProduct from "./client/pages/SingleProduct.jsx";
 import AdminLogin from "./admin/pages/AdminLogin.jsx";
 import Dashboard from "./admin/pages/Dashboard.jsx";
-import { ProtectedRoute, AdminLoginRoute } from "./ProtectedRoute.jsx";
 import { useEffect } from "react";
 import useAuthStore from "./stores/authStore";
 
@@ -42,15 +41,9 @@ function App() {
                     <Route path="/signin" element={<PageTransition><SignIn /></PageTransition>} />
                     <Route path="/singleproduct" element={<PageTransition><SingleProduct /></PageTransition>} />
 
-                    {/* Admin login route - redirects to dashboard if already logged in */}
-                    <Route element={<AdminLoginRoute />}>
-                        <Route path="/adminlogin" element={<AdminLogin />} />
-                    </Route>
-
-                    {/* Protected dashboard routes - require authentication */}
-                    <Route element={<ProtectedRoute />}>
-                        <Route path="/dashboard/*" element={<Dashboard />} />
-                    </Route>
+                    {/* Admin routes - no longer protected */}
+                    <Route path="/adminlogin" element={<AdminLogin />} />
+                    <Route path="/dashboard/*" element={<Dashboard />} />
                 </Routes>
             </main>
 
