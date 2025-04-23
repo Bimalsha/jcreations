@@ -5,6 +5,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import useAuthStore from '../../stores/authStore';
 import axios from 'axios';
 import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
+import api from "../../utils/axios.js";
 
 function AdminLogin() {
     const [email, setEmail] = useState('');
@@ -37,7 +38,7 @@ function AdminLogin() {
 
         try {
             // Make direct API call to ensure correct endpoint
-            const response = await axios.post('/admin/login', {
+            const response = await api.get('/admin/login', {
                 email,
                 password
             }, {
@@ -50,7 +51,7 @@ function AdminLogin() {
             // Check status code explicitly
             if (response.status === 200) {
                 toast.success('Login successful!', { id: loadingToast });
-
+console.log('Login successful:', response.data);
                 // Extract token and user data from response
                 const { token, user } = response.data;
 

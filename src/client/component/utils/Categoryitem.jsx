@@ -92,7 +92,7 @@ function Categoryitem() {
                             transition={{ type: "spring", stiffness: 300 }}
                         >
                             <motion.img
-                                src={`https://jcreations.1000dtechnology.com/storage/${category.img}`}
+                                src={`${import.meta.env.VITE_STORAGE_URL}/${category.img}`}
                                 alt={category.name}
                                 className="w-16 h-16"
                                 animate={{ rotate: [0, 5, 0, -5, 0] }}
