@@ -1,110 +1,203 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { LuCodesandbox } from "react-icons/lu";
-import { FaMoneyBillWave, FaRegWindowClose, FaTags } from "react-icons/fa";
+import { FaRegWindowClose } from "react-icons/fa";
 import { AiOutlineReload } from "react-icons/ai";
 import { BsThreeDots, BsArrowLeft } from "react-icons/bs";
+import { FiPackage } from "react-icons/fi";
 import AddProductForm from './utils/AddProductForm .jsx';
+import UpdateProductForm from './utils/UpdateProductForm .jsx';
+import ProductPreviewModal from './utils/ProductPreviewModal.jsx';
+import toast from 'react-hot-toast';
+import api from "../../utils/axios.js";
 
 function Products() {
     const [showAddForm, setShowAddForm] = useState(false);
+    const [updateProduct, setUpdateProduct] = useState(null);
+    const [previewProduct, setPreviewProduct] = useState(null);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        fetchProducts();
+    }, []);
+
+    const fetchProducts = async () => {
+        setLoading(true);
+        try {
+            console.log('Fetching products from API:', import.meta.env.VITE_API_URL + '/products');
+
+            const response = await api.get('/products');
+
+            console.log('API Response status:', response.status);
+            console.log('API Response data:', response.data);
+
+            // Handle different response formats
+            let productData = [];
+            if (Array.isArray(response.data)) {
+                productData = response.data;
+            } else if (response.data.data && Array.isArray(response.data.data)) {
+                productData = response.data.data;
+            } else if (response.data.products && Array.isArray(response.data.products)) {
+                productData = response.data.products;
+            } else if (typeof response.data === 'object') {
+                // Handle nested object structures
+                if (response.data.id && response.data.name) {
+                    productData = [response.data];
+                } else {
+                    const possibleProducts = Object.values(response.data).find(val =>
+                        Array.isArray(val) && val.length > 0 && val[0]?.id);
+                    if (possibleProducts) {
+                        productData = possibleProducts;
+                    }
+                }
+            }
+
+            console.log('Processed product data:', productData);
+            setProducts(productData);
+            setError(null);
+
+            if (productData.length > 0) {
+                toast.success(`Loaded ${productData.length} products`);
+            } else {
+                toast.info('No products found');
+            }
+        } catch (error) {
+            console.error('Error fetching products:', error);
+
+            if (error.response) {
+                setError(`Server error: ${error.response.status}. ${error.response.data?.message || ''}`);
+            } else if (error.request) {
+                setError('Network error: No response from server.');
+            } else {
+                setError(`Request error: ${error.message}`);
+            }
+
+            toast.error('Failed to load products');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleAddProductClick = () => {
         setShowAddForm(true);
+        setUpdateProduct(null);
+    };
+
+    const handleUpdateProductClick = (product) => {
+        setUpdateProduct(product);
+        setShowAddForm(false);
+    };
+
+    const handlePreviewClick = (product) => {
+        setPreviewProduct({
+            ...product,
+            image: `${import.meta.env.VITE_STORAGE_URL}/${product.images}`,
+            offerPrice: parseFloat(product.price * (1 - (product.discount_percentage / 100))).toFixed(2),
+            discountPrice: parseFloat(product.price * (1 - (product.discount_percentage / 100))).toFixed(2),
+            discount: product.discount_percentage || 0,
+            listDate: new Date(product.created_at).toISOString().split('T')[0],
+            category: product.category?.name || product.category_id,
+            description: product.description || 'No description available'
+        });
+        setIsPreviewOpen(true);
+    };
+
+    const handleClosePreview = () => {
+        setIsPreviewOpen(false);
     };
 
     const handleBackToProducts = () => {
         setShowAddForm(false);
+        setUpdateProduct(null);
     };
 
-    const products = [
-        {
-            id: '01',
-            name: 'Special Birthday Cake',
-            category: 'Cake',
-            price: '3500.00',
-            image: 'https://i.imgur.com/WvEu0cO.png',
-            status: 'Active',
-        },
-        {
-            id: '02',
-            name: 'Chocolate Cake',
-            category: 'Cake',
-            price: '4000.00',
-            image: 'https://i.imgur.com/WvEu0cO.png',
-            status: 'Deactivate',
-        },
-    ];
-
     const statusClasses = {
-        Active: 'bg-green-100 text-green-700',
-        Deactivate: 'bg-red-100 text-red-700',
+        in_stock: 'bg-green-100 text-green-700',
+        out_of_stock: 'bg-red-100 text-red-700',
+        discontinued: 'bg-gray-100 text-gray-700'
     };
 
     return (
-        <div className={'flex flex-col'}>
-            {!showAddForm && (
+        <div className="flex flex-col min-h-[500px]">
+            {!showAddForm && !updateProduct && (
                 <div className="bg-[#F2EFE7] w-full h-[200px] px-6 pt-6">
                     <div className="flex items-center justify-between px-6 pt-6 mb-6">
                         <h2 className="text-2xl font-semibold text-[#333333] mt-[-10px] ml-[-20px]">
                             Products
                         </h2>
-                        <span className="text-sm text-gray-500 mt-[-10px] absolute right-8">March 28, 2025 | 08:30:02 | Good Morning!</span>
+                        <span className="text-sm text-gray-500 mt-[-10px] absolute right-8">
+                            {new Date().toLocaleDateString()} | {new Date().toLocaleTimeString()} | Good Morning!
+                        </span>
                     </div>
 
                     <div className="flex gap-6 b-8">
                         <div className="flex items-center gap-4 p-4 bg-white shadow-md rounded-xl w-60">
                             <div className="p-3 text-purple-600 bg-purple-100 rounded-full">
-                                <LuCodesandbox size={20} className={'text-[#A962FF] text-xl'}/>
+                                <LuCodesandbox size={20} className="text-[#A962FF] text-xl"/>
                             </div>
                             <div>
                                 <p className="text-sm text-gray-500">Products</p>
-                                <p className="text-lg font-semibold">33</p>
+                                <p className="text-lg font-semibold">{products.length}</p>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-4 p-4 bg-white shadow-md rounded-xl w-60">
-                            <div className="p-3  bg-red-100 rounded-full">
-                                <FaRegWindowClose size={20} className={'text-[#FF0000] text-xl'}/>
+                            <div className="p-3 bg-red-100 rounded-full">
+                                <FaRegWindowClose size={20} className="text-[#FF0000] text-xl"/>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Disable Products</p>
-                                <p className="text-lg font-semibold">05</p>
+                                <p className="text-sm text-gray-500">Disabled Products</p>
+                                <p className="text-lg font-semibold">
+                                    {products.filter(p => p.status !== 'in_stock').length}
+                                </p>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            <div className={`h-full w-full bg-white ${!showAddForm ? 'rounded-b-2xl' : 'rounded-2xl'}`}>
+            <div className={`h-full w-full ${(!showAddForm && !updateProduct) ? 'bg-white rounded-b-2xl' : 'rounded-2xl'}`}>
                 {showAddForm ? (
-                    <div className="px-8 pt-4">
+                    <div className="w-full pt-4 px-4">
                         <button
                             onClick={handleBackToProducts}
-                            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4"
+                            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 cursor-pointer ml-4"
                         >
                             <BsArrowLeft /> Back to Products
                         </button>
                         <AddProductForm />
                     </div>
+                ) : updateProduct ? (
+                    <div className="w-full pt-4 px-4">
+                        <button
+                            onClick={handleBackToProducts}
+                            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 cursor-pointer ml-4"
+                        >
+                            <BsArrowLeft /> Back to Products
+                        </button>
+                        <UpdateProductForm product={updateProduct} />
+                    </div>
                 ) : (
                     <>
-                        <div className={'px-8 pt-4 flex justify-between'}>
+                        <div className="px-8 pt-4 flex justify-between">
                             <button
                                 onClick={handleAddProductClick}
-                                className={'bg-[#FDE3B6] p-2 flex justify-center items-center rounded-lg cursor-pointer'}
+                                className="bg-[#FDE3B6] p-2 flex justify-center items-center rounded-lg cursor-pointer"
                             >
                                 + Add New Product
                             </button>
-                            <div className={'flex items-center gap-2'}>
+                            <div className="flex items-center gap-2">
                                 <div>
-                                    <span className={'text-sm text-[#C6C6C6]'}>Sort By:</span>
+                                    <span className="text-sm text-[#C6C6C6]">Sort By:</span>
                                     <select
-                                        className={'border border-[#C6C6C6] rounded-lg p-2 ml-2 focus:outline-none focus:ring-2 focus:ring-[#F7A313]'}>
+                                        className="border border-[#C6C6C6] rounded-lg p-2 ml-2 focus:outline-none focus:ring-2 focus:ring-[#F7A313]">
                                         <option value="name">Name</option>
                                         <option value="date">Date</option>
                                     </select>
                                 </div>
-                                <div className="relative ">
+                                <div className="relative">
                                     <input
                                         type="text"
                                         placeholder="Search products..."
@@ -120,60 +213,128 @@ function Products() {
                                 </div>
                             </div>
                         </div>
-                        <div className={'px-8 pt-8 '}>
-                            <div className="overflow-x-auto ">
-                                <table
-                                    className="min-w-full bg-white rounded-lg shadow-sm text-sm text-left">
-                                    <thead className="text-gray-600 font-semibold">
-                                    <tr>
-                                        <th className="px-4 py-2">Product#</th>
-                                        <th className="px-4 py-2">Product Name</th>
-                                        <th className="px-4 py-2">Category</th>
-                                        <th className="px-4 py-2">Price</th>
-                                        <th className="px-4 py-2">Image</th>
-                                        <th className="px-4 py-2">More</th>
-                                        <th className="px-4 py-2">Update</th>
-                                        <th className="px-4 py-2">Status</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {products.map((product) => (
-                                        <tr key={product.id} className="border-t hover:bg-gray-50">
-                                            <td className="px-4 py-2">{product.id}</td>
-                                            <td className="px-4 py-2">{product.name}</td>
-                                            <td className="px-4 py-2">{product.category}</td>
-                                            <td className="px-4 py-2">{product.price}</td>
-                                            <td className="px-4 py-2">
-                                                <img
-                                                    src={product.image}
-                                                    alt="cake"
-                                                    className="w-6 h-6 object-cover rounded"
-                                                />
-                                            </td>
-                                            <td className="px-4 py-2">
-                                                <BsThreeDots className="text-blue-400 text-lg cursor-pointer"/>
-                                            </td>
-                                            <td className="px-4 py-2">
-                                                <AiOutlineReload className="text-yellow-500 text-lg cursor-pointer"/>
-                                            </td>
-                                            <td className="px-4 py-2">
-                                                <span
-                                                    className={`px-2 py-1 rounded-full text-xs font-medium ${statusClasses[product.status]}`}
-                                                >
-                                                  {product.status}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div className="px-8 pt-8 pb-8">
+                            {loading ? (
+                                <div className="flex justify-center items-center h-40">
+                                    <div className="h-10 w-10 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
+                                    <span className="ml-3 text-gray-600">Loading products...</span>
+                                </div>
+                            ) : error ? (
+                                <div className="text-center py-8 bg-white rounded-lg shadow-sm">
+                                    <div className="text-red-500 mb-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-lg font-medium text-gray-700 mb-2">{error}</h3>
+                                    <button
+                                        onClick={fetchProducts}
+                                        className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                                    >
+                                        Try Again
+                                    </button>
+                                </div>
+                            ) : products.length === 0 ? (
+                                <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+                                    <div className="text-gray-400 mb-4">
+                                        <FiPackage className="h-16 w-16 mx-auto" />
+                                    </div>
+                                    <h3 className="text-lg font-medium text-gray-700 mb-1">No products found</h3>
+                                    <p className="text-gray-500 mb-4">Start by adding your first product</p>
+                                    <button
+                                        onClick={handleAddProductClick}
+                                        className="px-4 py-2 bg-[#FDE3B6] text-gray-800 rounded-lg hover:bg-[#FAD59D] transition-colors"
+                                    >
+                                        + Add New Product
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="border border-gray-200 rounded-lg shadow-sm">
+                                    {/* Table with fixed container height - only this will scroll */}
+                                    <div className="relative">
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <thead className="bg-white sticky top-0 z-10 shadow-sm">
+                                            <tr>
+                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">ID</th>
+                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Product Name</th>
+                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Category</th>
+                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Price</th>
+                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Discount</th>
+                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Image</th>
+                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">More</th>
+                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Update</th>
+                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
+                                            </tr>
+                                            </thead>
+                                        </table>
+                                        {/* Separate scrollable body */}
+                                        <div className="max-h-[400px] overflow-y-auto">
+                                            <table className="min-w-full divide-y divide-gray-200">
+                                                <tbody className="bg-white divide-y divide-gray-200">
+                                                {products.map((product) => (
+                                                    <tr key={product.id} className="hover:bg-gray-50">
+                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '5%'}}>{product.id}</td>
+                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '20%'}}>{product.name}</td>
+                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '15%'}}>{product.category?.name || product.category_id}</td>
+                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '10%'}}>${parseFloat(product.price).toFixed(2)}</td>
+                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '10%'}}>{product.discount_percentage || 0}%</td>
+                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '10%'}}>
+                                                            <img
+                                                                src={`${import.meta.env.VITE_STORAGE_URL}/${product.images}`}
+                                                                alt={product.name}
+                                                                className="w-10 h-10 object-cover rounded"
+                                                                onError={(e) => {
+                                                                    e.target.src = '/logo.png';
+                                                                    e.target.onerror = null;
+                                                                }}
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '10%'}}>
+                                                            <button
+                                                                onClick={() => handlePreviewClick(product)}
+                                                                className="w-full h-full flex justify-center items-center cursor-pointer"
+                                                                aria-label={`View details of ${product.name}`}
+                                                            >
+                                                                <BsThreeDots className="text-blue-400 text-lg hover:text-blue-600"/>
+                                                            </button>
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '10%'}}>
+                                                            <button
+                                                                onClick={() => handleUpdateProductClick(product)}
+                                                                className="w-full h-full flex justify-center items-center cursor-pointer"
+                                                                aria-label={`Update ${product.name}`}
+                                                            >
+                                                                <AiOutlineReload className="text-yellow-500 text-lg hover:text-yellow-600"/>
+                                                            </button>
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '10%'}}>
+                                                                <span
+                                                                    className={`px-2 py-1 rounded-full text-xs font-medium ${statusClasses[product.status] || 'bg-gray-100 text-gray-700'}`}
+                                                                >
+                                                                    {product.status?.replace('_', ' ') || 'unknown'}
+                                                                </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </>
                 )}
             </div>
+
+            {/* Product Preview Modal */}
+            <ProductPreviewModal
+                isOpen={isPreviewOpen}
+                onClose={handleClosePreview}
+                product={previewProduct || {}}
+            />
         </div>
-    )
+    );
 }
 
-export default Products
+export default Products;
