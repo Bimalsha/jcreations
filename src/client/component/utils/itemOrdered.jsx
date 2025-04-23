@@ -17,7 +17,7 @@ function itemOrdered() {
             <div className="relative px-8 pt-4 pb-4 lg:flex justify-between">
                 <motion.div className="flex ">
                     <motion.img
-                        src="../../../../public/pngtree-chocolate-cake-png-image_17407867.png"
+                        src="..//pngtree-chocolate-cake-png-image_17407867.png"
                         alt="Product"
                         className="h-[80px] w-[80px] object-cover"
                         whileHover={{scale: 1.05}}

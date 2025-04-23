@@ -5,7 +5,7 @@ body {
     background: white;
 }
 .stamp{
-    background-image: url('../../../public/hero/stamp.svg');
+    background-image: url('/hero/stamp.svg');
     background-size: cover;
     background-position: center;
 }

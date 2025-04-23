@@ -114,7 +114,7 @@ function SignIn() {
                                         whileHover={{backgroundColor: "#e8e8e8"}}
                                         whileTap={{scale: 0.98}}
                                     >
-                                        <img src="../../../public/icon/google.svg" alt="Google" className="w-5 h-5"/>
+                                        <img src="/icon/google.svg" alt="Google" className="w-5 h-5"/>
                                         Continue with Google
                                     </motion.button>
                                 </motion.div>
