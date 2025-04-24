@@ -8,7 +8,7 @@ import { FiPackage } from "react-icons/fi";
 import AddProductForm from './utils/AddProductForm .jsx';
 import UpdateProductForm from './utils/UpdateProductForm .jsx';
 import ProductPreviewModal from './utils/ProductPreviewModal.jsx';
-import toast from 'react-hot-toast';
+import toast, {Toaster} from 'react-hot-toast';
 import api from "../../utils/axios.js";
 import useAuthStore from '../../stores/authStore';
 
@@ -141,6 +141,13 @@ function Products() {
         setShowAddForm(true);
         setUpdateProduct(null);
     };
+    const handleAddProductSuccess = (needsRefresh) => {
+        setShowAddForm(false);  // Hide the form
+
+        if (needsRefresh) {
+            fetchProducts();  // Reload the products table
+        }
+    };
 
     const handleUpdateProductClick = (product) => {
         setUpdateProduct(product);
@@ -186,6 +193,11 @@ function Products() {
 
     return (
         <div className="flex flex-col min-h-[500px]">
+            <Toaster
+                position="top-right"
+                reverseOrder={false}
+                className="z-50"
+            />
             {!showAddForm && !updateProduct && (
                 <div className="bg-[#F2EFE7] w-full h-[200px] px-6 pt-6">
                     <div className="flex items-center justify-between px-6 pt-6 mb-6">
@@ -232,7 +244,7 @@ function Products() {
                         >
                             <BsArrowLeft /> Back to Products
                         </button>
-                        <AddProductForm />
+                        <AddProductForm onSuccess={handleAddProductSuccess} />
                     </div>
                 ) : updateProduct ? (
                     <div className="w-full pt-4 px-4">
