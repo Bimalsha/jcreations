@@ -3,19 +3,27 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import useAuthStore from '../../stores/authStore';
-import axios from 'axios';
 import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
-import api from "../../utils/axios.js";
+import api from '../../utils/axios.js';
 
 function AdminLogin() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const navigate = useNavigate();
+    const { login, user } = useAuthStore();
+
+    const [formData, setFormData] = useState({
+        email: '',
+        password: '',
+    });
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const navigate = useNavigate();
-    const login = useAuthStore(state => state.login);
 
     useEffect(() => {
+        // Check if user is already logged in and has admin role
+        if (user && user.roles && user.roles.includes('admin')) {
+            navigate('/dashboard');
+            return;
+        }
+
         // Disable scrolling
         document.body.style.overflow = 'hidden';
 
@@ -23,12 +31,19 @@ function AdminLogin() {
         return () => {
             document.body.style.overflow = 'auto';
         };
-    }, []);
+    }, [user, navigate]);
+
+    const handleChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value,
+        });
+    };
 
     const handleLogin = async (e) => {
         e.preventDefault();
 
-        if (!email || !password) {
+        if (!formData.email || !formData.password) {
             toast.error('Please enter both email and password');
             return;
         }
@@ -37,48 +52,42 @@ function AdminLogin() {
         const loadingToast = toast.loading('Logging in...');
 
         try {
-            // Make direct API call to ensure correct endpoint
-            const response = await api.get('/admin/login', {
-                email,
-                password
-            }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
-            });
+            // Using axios instance from utils/axios.js
+            const response = await api.post('/admin/login', formData);
 
-            // Check status code explicitly
-            if (response.status === 200) {
-                toast.success('Login successful!', { id: loadingToast });
-console.log('Login successful:', response.data);
-                // Extract token and user data from response
-                const { token, user } = response.data;
+            // Extract data from response
+            const { message, user, token } = response.data;
 
-                // Update auth store
-                login(token, user);
-
-                // Wait a moment to show success message
-                setTimeout(() => navigate('/dashboard'), 500);
-            } else {
-                toast.error('Unexpected response from server', { id: loadingToast });
+            // Check if user has admin role
+            if (!user.roles || !user.roles.includes('admin')) {
+                throw new Error('You do not have admin privileges');
             }
+
+            toast.success(message || 'Login successful!', { id: loadingToast });
+            console.log('Login successful:', response.data);
+
+            // Save to localStorage
+            localStorage.setItem('authUser', JSON.stringify(user));
+            localStorage.setItem('authToken', token);
+
+            // Update auth store
+            login(user, token);
+
+            // Wait a moment to show success message then redirect to dashboard
+            setTimeout(() => navigate('/dashboard'), 500);
+
         } catch (error) {
             console.error('Login error:', error);
 
             let errorMessage;
-
-            if (error.response) {
-                if (error.response.status === 404) {
-                    errorMessage = 'API endpoint not found. Please check server configuration.';
-                } else {
-                    errorMessage = error.response.data?.message ||
-                        `Server error: ${error.response.status}`;
-                }
-            } else if (error.request) {
-                errorMessage = 'No response from server. Please check your connection.';
+            if (!error.response) {
+                errorMessage = 'Network error. Please check your connection.';
+            } else if (error.response.status === 401) {
+                errorMessage = 'Invalid email or password';
+            } else if (error.response.status === 403) {
+                errorMessage = 'You do not have permission to access the admin area';
             } else {
-                errorMessage = error.message || 'An error occurred during login.';
+                errorMessage = error.response?.data?.message || error.message || 'Login failed. Please try again.';
             }
 
             toast.error(errorMessage, { id: loadingToast });
@@ -118,8 +127,9 @@ console.log('Login successful:', response.data);
                 <form className="space-y-4" onSubmit={handleLogin}>
                     <motion.input
                         type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
                         placeholder="enter your email"
                         className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
                         initial={{ opacity: 0, x: -50 }}
@@ -130,8 +140,9 @@ console.log('Login successful:', response.data);
                     <div className="relative">
                         <motion.input
                             type={showPassword ? "text" : "password"}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
                             placeholder="enter your password"
                             className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black pr-10"
                             initial={{ opacity: 0, x: -50 }}

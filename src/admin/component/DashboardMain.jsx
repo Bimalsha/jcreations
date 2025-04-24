@@ -1,14 +1,25 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom';
 import { LuCodesandbox } from "react-icons/lu";
 import { FaMoneyBillWave, FaRegWindowClose, FaTags } from "react-icons/fa";
 import { BsCash, BsThreeDots } from "react-icons/bs";
 import { AiOutlineReload } from "react-icons/ai";
 import { IoPricetagOutline } from "react-icons/io5";
 import OrderDetailsModal from './utils/OrderDetailsModal';
+import useAuthStore from '../../stores/authStore';
 
 function DashboardMain() {
+    const navigate = useNavigate();
+    const { user } = useAuthStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedOrderId, setSelectedOrderId] = useState(null);
+
+    useEffect(() => {
+        // Check if user exists and has admin role
+        if (!user || !user.roles || !user.roles.includes('admin')) {
+            navigate('/adminlogin');
+        }
+    }, [user, navigate]);
 
     const products = [
         {

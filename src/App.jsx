@@ -12,6 +12,7 @@ import SignIn from "./client/pages/SignIn.jsx";
 import SingleProduct from "./client/pages/SingleProduct.jsx";
 import AdminLogin from "./admin/pages/AdminLogin.jsx";
 import Dashboard from "./admin/pages/Dashboard.jsx";
+import ProtectedAdminRoute from "./admin/component/ProtectedAdminRoute.jsx";
 import { useEffect } from "react";
 import useAuthStore from "./stores/authStore";
 
@@ -41,9 +42,13 @@ function App() {
                     <Route path="/signin" element={<PageTransition><SignIn /></PageTransition>} />
                     <Route path="/singleproduct" element={<PageTransition><SingleProduct /></PageTransition>} />
 
-                    {/* Admin routes - no longer protected */}
+                    {/* Admin routes */}
                     <Route path="/adminlogin" element={<AdminLogin />} />
-                    <Route path="/dashboard/*" element={<Dashboard />} />
+
+                    {/* Protected Admin routes */}
+                    <Route element={<ProtectedAdminRoute />}>
+                        <Route path="/dashboard/*" element={<Dashboard />} />
+                    </Route>
                 </Routes>
             </main>
 
