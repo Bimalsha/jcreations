@@ -2,24 +2,22 @@ import React, { useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import api from "../../../utils/axios.js";
 
-
 function Categoryitem() {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const scrollRef = useRef(null);
+    const DEFAULT_IMAGE = "/placeholder.png";
 
     // Fetch categories from API
     useEffect(() => {
         const fetchCategories = async () => {
             try {
                 const response = await api.get('/categories');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch categories');
-                }
-                const data = await response.json();
-                setCategories(data);
+                setCategories(response.data);
             } catch (error) {
                 console.error('Error fetching categories:', error);
+                setError('Failed to load categories');
             } finally {
                 setLoading(false);
             }
@@ -28,6 +26,13 @@ function Categoryitem() {
         fetchCategories();
     }, []);
 
+    // Get image source with fallback
+    const getImageSrc = (category) => {
+        if (!category || !category.img) return DEFAULT_IMAGE;
+
+        const storageUrl = import.meta.env.VITE_STORAGE_URL || 'https://jcreations.1000dtechnology.com/storage';
+        return `${storageUrl}/${category.img}`;
+    };
 
     // Animation variants
     const container = {
@@ -66,9 +71,17 @@ function Categoryitem() {
         return () => scrollContainer.removeEventListener("wheel", handleWheel);
     }, []);
 
+    if (loading) {
+        return <div className="w-full mt-4 text-center">Loading categories...</div>;
+    }
+
+    if (error) {
+        return <div className="w-full mt-4 text-center text-red-500">{error}</div>;
+    }
+
     return (
         <motion.div
-            className="w-full mt-4 overflow-visible" // Changed overflow to visible
+            className="w-full mt-4 overflow-visible"
             initial="hidden"
             animate="visible"
             variants={container}
@@ -78,7 +91,7 @@ function Categoryitem() {
                 {categories.map((category, index) => (
                     <motion.div
                         className="flex flex-col justify-center items-center"
-                        key={index}
+                        key={category.id || index}
                         variants={item}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -92,14 +105,18 @@ function Categoryitem() {
                             transition={{ type: "spring", stiffness: 300 }}
                         >
                             <motion.img
-                                src={`https://jcreations.1000dtechnology.com/storage/${category.img}`}
+                                src={getImageSrc(category)}
                                 alt={category.name}
-                                className="w-16 h-16"
+                                className="w-16 h-16 object-contain"
                                 animate={{ rotate: [0, 5, 0, -5, 0] }}
                                 transition={{
                                     duration: 5,
                                     repeat: Infinity,
                                     repeatDelay: 2
+                                }}
+                                onError={(e) => {
+                                    e.target.src = DEFAULT_IMAGE;
+                                    e.target.onerror = null;
                                 }}
                             />
                         </motion.div>
@@ -125,7 +142,7 @@ function Categoryitem() {
                 {categories.map((category, index) => (
                     <motion.div
                         className="flex flex-col justify-center items-center flex-shrink-0 snap-center"
-                        key={index}
+                        key={category.id || index}
                         variants={item}
                         whileTap={{ scale: 0.95 }}
                     >
@@ -137,12 +154,16 @@ function Categoryitem() {
                             }}
                         >
                             <motion.img
-                                src={`https://jcreations.1000dtechnology.com/storage/${category.img}`}
+                                src={getImageSrc(category)}
                                 alt={category.name}
-                                className="w-10 h-10"
+                                className="w-10 h-10 object-contain"
                                 initial={{ opacity: 0, scale: 0 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: index * 0.1 + 0.3 }}
+                                onError={(e) => {
+                                    e.target.src = DEFAULT_IMAGE;
+                                    e.target.onerror = null;
+                                }}
                             />
                         </motion.div>
                         <motion.span
