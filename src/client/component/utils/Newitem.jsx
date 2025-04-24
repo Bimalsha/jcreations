@@ -13,7 +13,7 @@ function Newitem() {
         >
             <div className="relative flex justify-center">
                 <motion.img
-                    src="../../../../public/cake.jpg"
+                    src="..//cake.jpg"
                     alt="Product"
                     className="h-[200px] w-[200px] object-cover rounded-3xl"
                     whileHover={{ scale: 1.05 }}

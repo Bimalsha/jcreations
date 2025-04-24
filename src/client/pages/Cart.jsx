@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
 import BottomNavigator from "../component/BottomNavigator.jsx";
 import Header from "../component/Header.jsx";
 import CartNavigator from '../component/utils/CartNavigator.jsx';
@@ -8,6 +8,7 @@ import Additionalnotes from '../component/utils/AdditionalNotes.jsx';
 import DeliveryInfo from '../component/utils/DeliveryInfo.jsx';
 import PaymentMethodSelector from '../component/utils/PaymentMethodSelector.jsx';
 import OrderConfirmed from '../component/utils/OrderConfirmed.jsx';
+import api from "../../utils/axios";
 
 function Cart() {
     const [cartItems, setCartItems] = useState([]);
@@ -20,14 +21,25 @@ function Cart() {
     useEffect(() => {
         const fetchCart = async () => {
             try {
-                const response = await fetch('https://jcreations.1000dtechnology.com/api/cart');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch cart data');
+                // Get cart ID from localStorage if it exists
+                const cartId = localStorage.getItem("jcreations_cart_id");
+                
+                if (!cartId) {
+                    // Handle case where no cart exists yet
+                    setCartItems([]);
+                    return;
                 }
-                const data = await response.json();
+                
+                // Make the API request with cartId in the path
+                const response = await api.get(`/cart/${cartId}`);
+                const data = response.data;
+                
                 console.log("Cart data:", data);
+                
+                // Transform the cart items for display
                 const transformedItems = data.items.map(item => ({
                     id: item.product.id,
+                    itemId: item.id, // Store the cart item ID for updates/removal
                     name: item.product.name,
                     price: item.product.price,
                     quantity: item.quantity,
@@ -38,7 +50,7 @@ function Cart() {
                 setCartItems(transformedItems);
             } catch (err) {
                 console.error('Error fetching cart:', err);
-                setError(err.message);
+                setError(err.response?.data?.message || err.message);
             } finally {
                 setLoading(false);
             }
@@ -49,53 +61,53 @@ function Cart() {
 
     const handleRemove = async (itemId) => {
         try {
-            const response = await fetch(`https://jcreations.1000dtechnology.com/api/cart/items/${itemId}`, {
-                method: 'DELETE'
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to remove item');
+            const cartId = localStorage.getItem("jcreations_cart_id");
+            if (!cartId) {
+                throw new Error("No cart ID found");
             }
-
-            setCartItems(prevItems => prevItems.filter(item => item.id !== itemId));
+            
+            await api.delete(`/cart/${cartId}/items/${itemId}`);
+            setCartItems(prevItems => prevItems.filter(item => item.itemId !== itemId));
         } catch (err) {
             console.error('Error removing item:', err);
+            setError(err.response?.data?.message || 'Failed to remove item');
         }
     };
 
     const handleQuantityChange = async (itemId, newQuantity) => {
-        try {
-            const response = await fetch(`https://jcreations.1000dtechnology.com/api/cart/items/${itemId}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ quantity: newQuantity })
-            });
 
-            if (!response.ok) {
-                throw new Error('Failed to update quantity');
+        console.log("Updating quantity for item:", itemId, "to", newQuantity);
+        try {
+            const cartId = localStorage.getItem("jcreations_cart_id");
+            if (!cartId) {
+                throw new Error("No cart ID found");
             }
+            
+            await api.put(`/cart/items/${itemId}`, { 
+                quantity: newQuantity,
+                cart_id: cartId
+            });
 
             setCartItems(prevItems =>
                 prevItems.map(item =>
-                    item.id === itemId ? { ...item, quantity: newQuantity } : item
+                    item.itemId === itemId ? { ...item, quantity: newQuantity } : item
                 )
             );
         } catch (err) {
             console.error('Error updating quantity:', err);
+            setError(err.response?.data?.message || 'Failed to update quantity');
         }
     };
 
     const handleIncreaseQuantity = (itemId) => {
-        const item = cartItems.find(item => item.id === itemId);
+        const item = cartItems.find(item => item.itemId === itemId);
         if (item) {
             handleQuantityChange(itemId, item.quantity + 1);
         }
     };
 
     const handleDecreaseQuantity = (itemId) => {
-        const item = cartItems.find(item => item.id === itemId);
+        const item = cartItems.find(item => item.itemId === itemId);
         if (item && item.quantity > 1) {
             handleQuantityChange(itemId, item.quantity - 1);
         }

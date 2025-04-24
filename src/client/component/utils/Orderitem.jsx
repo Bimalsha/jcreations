@@ -17,7 +17,7 @@ function Orderitem({ onViewDetails }) {
             <div className="relative p-4 sm:p-6 md:px-8 md:py-6 flex flex-col lg:flex-row justify-between gap-4">
                 <motion.div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
                     <motion.img
-                        src="../../../../public/pngtree-chocolate-cake-png-image_17407867.png"
+                        src="..//pngtree-chocolate-cake-png-image_17407867.png"
                         alt="Product"
                         className="h-[80px] w-[80px] md:h-[100px] md:w-[100px] object-cover"
                         whileHover={{scale: 1.05}}
