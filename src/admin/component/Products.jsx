@@ -116,7 +116,7 @@ function Products() {
             setError(null);
 
             if (productData.length > 0) {
-                toast.success(`Loaded ${productData.length} products`);
+
             } else {
                 toast.info('No products found');
             }
@@ -148,7 +148,13 @@ function Products() {
             fetchProducts();  // Reload the products table
         }
     };
+    const handleUpdateProductSuccess = (needsRefresh) => {
+        setUpdateProduct(false);  // Hide the form
 
+        if (needsRefresh) {
+            fetchProducts();  // Reload the products table
+        }
+    };
     const handleUpdateProductClick = (product) => {
         setUpdateProduct(product);
         setShowAddForm(false);
@@ -254,7 +260,8 @@ function Products() {
                         >
                             <BsArrowLeft /> Back to Products
                         </button>
-                        <UpdateProductForm product={updateProduct} />
+
+                        <UpdateProductForm product={updateProduct} onSuccess={handleUpdateProductSuccess} />
                     </div>
                 ) : (
                     <>

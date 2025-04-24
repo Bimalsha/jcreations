@@ -8,11 +8,14 @@ const UpdateProductForm = ({ product, onSuccess }) => {
     const [price, setPrice] = useState("");
     const [discountPercentage, setDiscountPercentage] = useState("");
     const [description, setDescription] = useState("");
-    const [images, setImages] = useState([]);
-    const [imagePreviews, setImagePreviews] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    // Track image changes separately
+    const [existingImages, setExistingImages] = useState([]);
+    const [newImages, setNewImages] = useState([]);
+    const [imagePreviews, setImagePreviews] = useState([]);
     const [imageErrors, setImageErrors] = useState({});
 
     const MAX_IMAGES = 3;
@@ -37,7 +40,7 @@ const UpdateProductForm = ({ product, onSuccess }) => {
         }
     };
 
-    // Populate form with product data when component mounts or product changes
+    // Populate form with product data
     useEffect(() => {
         if (product) {
             console.log('Product data received:', product);
@@ -48,7 +51,8 @@ const UpdateProductForm = ({ product, onSuccess }) => {
             setDescription(product.description || "");
 
             // Reset image states
-            setImages([]);
+            setExistingImages([]);
+            setNewImages([]);
             setImagePreviews([]);
             setImageErrors({});
 
@@ -59,7 +63,8 @@ const UpdateProductForm = ({ product, onSuccess }) => {
                     ? product.images
                     : [product.images];
 
-                setImages(imageArray);
+                // Set as existing images - these are paths, not actual files
+                setExistingImages(imageArray);
 
                 // Create preview URLs
                 const previews = imageArray.map(img => {
@@ -73,13 +78,13 @@ const UpdateProductForm = ({ product, onSuccess }) => {
 
                 setImagePreviews(previews);
             } else if (product.image) {
-                setImages([product.image]);
+                setExistingImages([product.image]);
 
-                if (product.image.startsWith('data:') || product.image.startsWith('http')) {
-                    setImagePreviews([product.image]);
-                } else {
-                    setImagePreviews([`${import.meta.env.VITE_STORAGE_URL}/${product.image}`]);
-                }
+                const preview = product.image.startsWith('data:') || product.image.startsWith('http')
+                    ? product.image
+                    : `${import.meta.env.VITE_STORAGE_URL}/${product.image}`;
+
+                setImagePreviews([preview]);
             }
         }
     }, [product]);
@@ -88,7 +93,7 @@ const UpdateProductForm = ({ product, onSuccess }) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        if (images.length >= MAX_IMAGES) {
+        if (existingImages.length + newImages.length >= MAX_IMAGES) {
             toast.error(`Maximum ${MAX_IMAGES} images allowed`);
             return;
         }
@@ -109,13 +114,17 @@ const UpdateProductForm = ({ product, onSuccess }) => {
             const reader = new FileReader();
             reader.onloadend = () => {
                 const dataUrl = reader.result;
-                setImages(prev => [...prev, dataUrl]);
+
+                // Add to new images - these need to be uploaded
+                setNewImages(prev => [...prev, file]);
+
+                // Add preview
                 setImagePreviews(prev => [...prev, dataUrl]);
 
-                // Clear any previous error for this image
+                // Clear any previous error
                 setImageErrors(prev => {
                     const newErrors = {...prev};
-                    delete newErrors[images.length];
+                    delete newErrors[imagePreviews.length];
                     return newErrors;
                 });
             };
@@ -131,10 +140,22 @@ const UpdateProductForm = ({ product, onSuccess }) => {
     };
 
     const handleRemoveImage = (index) => {
-        setImages(prev => prev.filter((_, i) => i !== index));
+        // Need to determine if we're removing an existing or new image
+        const totalExisting = existingImages.length;
+
+        if (index < totalExisting) {
+            // Removing an existing image
+            setExistingImages(prev => prev.filter((_, i) => i !== index));
+        } else {
+            // Removing a new image (adjust index)
+            const newIndex = index - totalExisting;
+            setNewImages(prev => prev.filter((_, i) => i !== newIndex));
+        }
+
+        // Remove from previews
         setImagePreviews(prev => prev.filter((_, i) => i !== index));
 
-        // Remove error for this image
+        // Remove error
         setImageErrors(prev => {
             const newErrors = {...prev};
             delete newErrors[index];
@@ -143,18 +164,14 @@ const UpdateProductForm = ({ product, onSuccess }) => {
     };
 
     const handleImageError = (index) => {
-        // Dismiss any existing toasts to prevent duplicates
         toast.dismiss();
-
         console.error(`Image ${index} failed to load:`, imagePreviews[index]);
 
-        // Record this error
         setImageErrors(prev => ({
             ...prev,
             [index]: true
         }));
 
-        // Show clear toast notification for image not found
         toast.error(`Image ${index + 1} not found or failed to load. Please replace it.`, {
             duration: 4000,
             id: `image-error-${index}`
@@ -162,7 +179,6 @@ const UpdateProductForm = ({ product, onSuccess }) => {
     };
 
     const handleCancel = () => {
-        // Navigate back or close the form
         if (typeof onSuccess === 'function') {
             onSuccess();
         }
@@ -171,7 +187,7 @@ const UpdateProductForm = ({ product, onSuccess }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validate fields one by one
+        // Validate fields
         if (!name.trim()) {
             toast.error("Product name is required");
             return;
@@ -193,7 +209,7 @@ const UpdateProductForm = ({ product, onSuccess }) => {
         }
 
         // Check if there's at least one image
-        if (images.length === 0) {
+        if (existingImages.length + newImages.length === 0) {
             toast.error("Please add at least one product image");
             return;
         }
@@ -204,36 +220,52 @@ const UpdateProductForm = ({ product, onSuccess }) => {
             return;
         }
 
-        // All validation passed, prepare data for API
         try {
             setLoading(true);
             setError(null);
 
-            const productData = {
-                id: product.id,
-                name,
-                description,
-                images: images,
-                category_id: parseInt(category),
-                price: parseFloat(price),
-                discount_percentage: discountPercentage ? parseFloat(discountPercentage) : 0,
-                status: product.status || "in_stock",
-                created_at: product.created_at,
-                updated_at: new Date().toISOString()
-            };
+            // Use FormData for mixed content (text fields + files)
+            const formData = new FormData();
 
-            console.log("Sending product data:", productData);
+            // Append text fields
+            formData.append('name', name);
+            formData.append('category_id', category);
+            formData.append('price', price);
+            formData.append('discount_percentage', discountPercentage || 0);
+            formData.append('description', description);
+            formData.append('status', product.status || 'in_stock');
 
-            // Update endpoint to use the product ID
-            const response = await api.post(`/admin/products/${product.id}`, productData);
+            // Laravel requires _method for PUT/PATCH requests
+            formData.append('_method', 'PUT');
+
+            // Append existing image paths - use proper array notation for Laravel
+            existingImages.forEach(img => {
+                formData.append('existing_images[]', img);
+            });
+
+            // Append new image files - use proper array notation for Laravel
+            newImages.forEach(file => {
+                formData.append('images[]', file);
+            });
+
+            console.log("Sending product update with images:", {
+                existingCount: existingImages.length,
+                newCount: newImages.length
+            });
+
+            // Update product with FormData
+            const response = await api.post(`/admin/products/${product.id}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            });
 
             console.log("API response:", response);
 
             if (response.status >= 200 && response.status < 300) {
                 toast.success("Product updated successfully");
-                // Call success callback if provided
                 if (typeof onSuccess === 'function') {
-                    onSuccess();
+                    onSuccess(true); // Pass true to refresh product list
                 }
             } else {
                 throw new Error("Failed to update product");
@@ -387,7 +419,7 @@ const UpdateProductForm = ({ product, onSuccess }) => {
                         )}
 
                         {/* Show upload button if less than MAX_IMAGES */}
-                        {images.length < MAX_IMAGES && (
+                        {imagePreviews.length < MAX_IMAGES && (
                             <label className="border-2 border-dashed border-gray-300 rounded-lg w-20 h-20 flex items-center justify-center cursor-pointer bg-white/50 hover:bg-white/80 transition-all">
                                 <input
                                     type="file"
