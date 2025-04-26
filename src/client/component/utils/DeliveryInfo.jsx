@@ -1,9 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../utils/axios';
 
-const DeliveryInfo = ({ deliveryInfo, setDeliveryInfo }) => {
+const DeliveryInfo = ({ deliveryInfo, setDeliveryInfo, onShippingChange }) => {
+  const [locations, setLocations] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchLocations = async () => {
+      setIsLoading(true);
+      try {
+        const response = await api.get('/locations');
+        if (response.data && response.data.locations) {
+          setLocations(response.data.locations);
+        }
+      } catch (error) {
+        console.error('Error fetching locations:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLocations();
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setDeliveryInfo(prev => ({ ...prev, [name]: value }));
+    
+    // When city changes, find the corresponding shipping charge and notify parent
+    if (name === 'city' && value) {
+      const selectedLocation = locations.find(location => location.city === value);
+      if (selectedLocation && onShippingChange) {
+        onShippingChange(parseFloat(selectedLocation.shipping_charge));
+      }
+    }
   };
 
   return (
@@ -34,11 +64,16 @@ const DeliveryInfo = ({ deliveryInfo, setDeliveryInfo }) => {
                 value={deliveryInfo.city || ''}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-indigo-900 focus:border-indigo-900"
+                disabled={isLoading}
               >
-                <option value="">Select</option>
-                <option value="city1">City 1</option>
-                <option value="city2">City 2</option>
+                <option value="">Select Location</option>
+                {locations.map(location => (
+                  <option key={location.id} value={location.city}>
+                    {location.city} (Rs.{location.shipping_charge})
+                  </option>
+                ))}
               </select>
+              {isLoading && <p className="text-xs text-gray-500">Loading locations...</p>}
             </div>
             <div className="space-y-2">
               <label htmlFor="deliveryDateTime" className="block text-sm font-medium text-gray-700">Date & Time for Delivery</label>
