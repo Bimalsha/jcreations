@@ -15,6 +15,7 @@ import Dashboard from "./admin/pages/Dashboard.jsx";
 import ProtectedAdminRoute from "./admin/component/ProtectedAdminRoute.jsx";
 import { useEffect } from "react";
 import useAuthStore from "./stores/authStore";
+import {Toaster} from "react-hot-toast";
 
 function App() {
     const location = useLocation();
@@ -31,6 +32,10 @@ function App() {
     return (
         <div className="flex flex-col min-h-screen">
             {!isAuthPage && !isDashboardPage && <Header />}
+            <Toaster
+                position="top-right"
+                reverseOrder={false}
+            />
 
             <main className={`flex-grow ${!isAuthPage && !isDashboardPage ? 'pt-16' : ''}`}>
                 <Routes location={location} key={location.pathname}>

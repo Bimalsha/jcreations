@@ -95,7 +95,7 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
         localStorage.setItem("jcreations_cart_id", response.data.cart_id);
       }
 
-      toast.success("Added to cart successfully!");
+      toast.success("Add to cart successfully");
     } catch (err) {
       console.error("Error adding to cart:", err);
       if (err.response && err.response.status === 422) {

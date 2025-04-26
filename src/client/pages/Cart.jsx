@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import api from '../../utils/axios.js';
+import toast from 'react-hot-toast'; // Added import for toast
 import BottomNavigator from "../component/BottomNavigator.jsx";
 import Header from "../component/Header.jsx";
 import CartNavigator from '../component/utils/CartNavigator.jsx';
@@ -11,14 +12,18 @@ import PaymentMethodSelector from '../component/utils/PaymentMethodSelector.jsx'
 import OrderConfirmed from '../component/utils/OrderConfirmed.jsx';
 
 function Cart() {
+
+    useEffect(() => {
+        // Scroll to top when cart page loads
+        window.scrollTo(0, 0);
+    }, []);
+
     // Sample cart items (fallback data)
-    const [cartItems, setCartItems] = useState([
-       
-    ]);
-    
+    const [cartItems, setCartItems] = useState([]);
+
     // Replace showCartItems with currentStep to track all three stages
     const [currentStep, setCurrentStep] = useState(1);
-    
+
     // Add state for login status and popup
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [showLoginPopup, setShowLoginPopup] = useState(false);
@@ -38,6 +43,9 @@ function Cart() {
     // Add this in the Cart component where other state variables are defined
     const [shipping, setShipping] = useState(300); // Default shipping cost
 
+    // Check if cart is empty
+    const isEmpty = cartItems.length === 0;
+
     const handleRemove = (id) => {
         setCartItems(cartItems.filter((item) => item.id !== id));
     };
@@ -54,7 +62,7 @@ function Cart() {
         setCartItems(
             cartItems.map((item) =>
                 item.id === id && item.quantity > 1
-                    ? { ...item, quantity: item.quantity - 1 } 
+                    ? { ...item, quantity: item.quantity - 1 }
                     : item
             )
         );
@@ -76,7 +84,7 @@ function Cart() {
         script.src = 'https://www.payhere.lk/lib/payhere.js';
         script.async = true;
         document.body.appendChild(script);
-        
+
         return () => {
             // Cleanup if needed
             if (document.body.contains(script)) {
@@ -84,9 +92,14 @@ function Cart() {
             }
         };
     }, []);
-    
+
     // Update the handleCheckout function with Payhere SDK implementation
     const handleCheckout = async () => {
+        // Don't proceed if cart is empty
+        if (isEmpty) {
+            return;
+        }
+
         if (currentStep === 1) {
             // Check if user is logged in
             if (!isLoggedIn) {
@@ -100,27 +113,27 @@ function Cart() {
             // Validate delivery info
             const requiredFields = ['customer_name', 'contact_number', 'city', 'address'];
             const missingFields = requiredFields.filter(field => !deliveryInfo[field]);
-            
+
             if (missingFields.length > 0) {
-                alert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+                toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
                 return;
             }
-            
+
             // Set loading state to true before API call
             setIsLoading(true);
-            
+
             try {
                 // Get cart ID from local storage
                 const cartId = localStorage.getItem('jcreations_cart_id');
                 if (!cartId) {
-                    alert('Cart information not found');
+                    toast.error('Cart information not found');
                     setIsLoading(false);
                     return;
                 }
-                
+
                 // Get firebase UID if available
                 const firebaseUid = localStorage.getItem('firebase_uid');
-                
+
                 // Prepare request body
                 const orderData = {
                     cart_id: parseInt(cartId),
@@ -130,19 +143,19 @@ function Cart() {
                     address: deliveryInfo.address,
                     req_datetime: new Date().toISOString()
                 };
-                
+
                 // Add firebase_uid only if available
                 if (firebaseUid) {
                     orderData.firebase_uid = firebaseUid;
                 }
-                
+
                 let response;
-                
+
                 if (selectedPaymentMethod === 'cod') {
                     // Cash on Delivery API endpoint
                     response = await api.post('/orders/cod', orderData);
                     console.log('COD order placed successfully:', response.data);
-                    
+
                     // Move to order confirmation for COD
                     if (response && response.data) {
                         if (response.data.orderId) {
@@ -158,31 +171,31 @@ function Cart() {
                     // Check if the response has the necessary data - UPDATED CONDITION
                     if (response && response.data) {
                         const responseData = response.data; // Direct access to data, not nested
-                        
+
                         // Store order ID before initiating payment
                         if (responseData.order_id) {
                             localStorage.setItem('jcreations_order_id', responseData.order_id);
                         }
-                        
+
                         // Check if Payhere SDK is loaded
                         if (typeof window.payhere !== 'undefined') {
                             console.log("Opening Payhere payment gateway...");
-                            
+
                             // Format the items for Payhere
-                            const itemsDescription = responseData.items 
+                            const itemsDescription = responseData.items
                                 ? responseData.items.map(item => `${item.product_name} x${item.quantity}`).join(', ')
                                 : "JCreations Order";
-                                
+
                             // Get payment data from the response
                             const paymentData = responseData.payment_data;
-                            
+
                             if (!paymentData) {
                                 console.error("Payment data missing from API response");
-                                alert("Payment configuration missing. Please try again.");
+                                toast.error("Payment configuration missing. Please try again.");
                                 setIsLoading(false);
                                 return;
                             }
-                            
+
                             // Configure Payhere payment using data from the API response
                             const payment = {
                                 sandbox: true,
@@ -217,59 +230,59 @@ function Cart() {
                                 setCurrentStep(3);
                                 setIsLoading(false);
                             };
-                            
+
                             window.payhere.onDismissed = function onDismissed() {
                                 console.log("Payment dismissed");
                                 setIsLoading(false);
                             };
-                            
+
                             window.payhere.onError = function onError(error) {
                                 console.log("Payment error:", error);
-                                alert("Payment failed: " + error);
+                                toast.error("Payment failed: " + error);
                                 setIsLoading(false);
                             };
-                            
+
                             // Important: Start the payment AFTER setting up event handlers
                             try {
                                 window.payhere.startPayment(payment);
                                 console.log("Payment window opened");
                             } catch (payhereError) {
                                 console.error("Error opening payment gateway:", payhereError);
-                                alert("Error opening payment gateway. Please try again.");
+                                toast.error("Error opening payment gateway. Please try again.");
                                 setIsLoading(false);
                             }
-                            
+
                             // Don't proceed to next step yet - wait for payment completion
                             return;
                         } else {
                             // Fallback if SDK is not loaded
                             console.error("Payhere SDK not loaded");
-                            alert("Payment gateway is not available. Please try again later.");
+                            toast.error("Payment gateway is not available. Please try again later.");
                             setIsLoading(false);
                         }
                     } else {
                         console.error("Invalid response from API");
-                        alert("Could not process payment. Please try again later.");
+                        toast.error("Could not process payment. Please try again later.");
                         setIsLoading(false);
                     }
                 }
-                
+
                 // Only move to next step if API call was successful (for COD)
                 // For online payment, this is handled in the onCompleted callback
             } catch (error) {
                 console.error('Error placing order:', error);
-                
+
                 // Provide more specific error messages based on error type
                 if (error.response) {
                     // The request was made and the server responded with a status code
                     // that falls out of the range of 2xx
-                    alert(`Order failed: ${error.response.data.message || 'Please try again later'}`);
+                    toast.error(`Order failed: ${error.response.data.message || 'Please try again later'}`);
                 } else if (error.request) {
                     // The request was made but no response was received
-                    alert('Network error. Please check your internet connection and try again.');
+                    toast.error('Network error. Please check your internet connection and try again.');
                 } else {
                     // Something happened in setting up the request
-                    alert('Failed to place order. Please try again.');
+                    toast.error('Failed to place order. Please try again.');
                 }
             } finally {
                 // Reset loading state regardless of success or failure
@@ -281,7 +294,7 @@ function Cart() {
     const handleBackToCart = () => {
         setCurrentStep(1);
     };
-    
+
     const handleLoginRedirect = () => {
         // Redirect to login page
         console.log("Redirecting to login page");
@@ -289,13 +302,13 @@ function Cart() {
         // window.location.href = '/login';
         setShowLoginPopup(false);
     };
-    
+
     const handleContinueAsGuest = () => {
         setShowLoginPopup(false);
         setCurrentStep(2);
         console.log("Continuing as guest");
     };
-    
+
     const handleClosePopup = () => {
         setShowLoginPopup(false);
     };
@@ -307,7 +320,7 @@ function Cart() {
                 if (cartId) {
                     const response = await api.get(`/cart/${cartId}`);
                     console.log("Raw cart data:", response.data);
-                    
+
                     if (response.data && response.data.items && response.data.items.length > 0) {
                         // Transform API response to match our component's format
                         const transformedItems = response.data.items.map(item => ({
@@ -315,13 +328,13 @@ function Cart() {
                             name: item.product.name,
                             price: item.product.price,
                             quantity: item.quantity,
-                            image: item.product.images && item.product.images.length > 0 
-                                ? `${import.meta.env.VITE_STORAGE_URL}/${item.product.images[0]}` 
+                            image: item.product.images && item.product.images.length > 0
+                                ? `${import.meta.env.VITE_STORAGE_URL}/${item.product.images[0]}`
                                 : "/category/cake.svg", // Default image if none available
                             product_id: item.product_id,
                             discount_percentage: item.product.discount_percentage || 0
                         }));
-                        
+
                         setCartItems(transformedItems);
                         console.log("Cart data transformed successfully:", transformedItems);
                     }
@@ -343,10 +356,10 @@ function Cart() {
             <main className="w-full">
                 <CartNavigator currentStep={currentStep} />
                 {currentStep === 1 && (
-                    // Original layout for cart view 
+                    // Original layout for cart view
                     <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 md:gap-6 px-4 py-6 pt-28 md:p-28">
                         <div className="w-full md:w-3/5 transition-all duration-300 ease-in-out">
-                            <CartItemDemo 
+                            <CartItemDemo
                                 cartItems={cartItems}
                                 onRemove={handleRemove}
                                 onIncreaseQuantity={handleIncreaseQuantity}
@@ -354,22 +367,23 @@ function Cart() {
                             />
                         </div>
                         <div className="w-full md:w-2/5">
-                            <OrderSummary 
+                            <OrderSummary
                                 subtotal={subtotal}
                                 shipping={shipping}
                                 total={total}
                                 onCheckout={handleCheckout}
                                 isCheckout={false}
+                                isEmpty={isEmpty}
                             />
                         </div>
                     </div>
                 )}
-                
+
                 {currentStep === 2 && (
-                    // Restructured layout for checkout 
+                    // Restructured layout for checkout
                     <div className="max-w-7xl mx-auto px-4 py-6 pt-28 md:p-28 transition-all duration-300 ease-in-out">
                         <div className="flex justify-start items-center mb-4">
-                            <button 
+                            <button
                                 onClick={handleBackToCart}
                                 className="text-amber-500 hover:text-amber-300 flex items-center"
                             >
@@ -381,43 +395,44 @@ function Cart() {
                         </div>
                         <div className="flex flex-col md:flex-row gap-4 md:gap-6">
                             <div className="w-full md:w-3/5 space-y-4">
-                                <DeliveryInfo 
+                                <DeliveryInfo
                                     deliveryInfo={deliveryInfo}
                                     setDeliveryInfo={setDeliveryInfo}
                                     onShippingChange={handleShippingChange}
                                 />
-                                <PaymentMethodSelector 
-                                    total={total} 
+                                <PaymentMethodSelector
+                                    total={total}
                                     selectedMethod={selectedPaymentMethod}
                                     onSelectPaymentMethod={setSelectedPaymentMethod}
                                 />
                                 <Additionalnotes />
                             </div>
                             <div className="w-full md:w-2/5 mt-4 md:mt-0">
-                                <OrderSummary 
+                                <OrderSummary
                                     subtotal={subtotal}
                                     shipping={shipping}
                                     total={total}
                                     onCheckout={handleCheckout}
                                     isCheckout={true}
+                                    isEmpty={isEmpty}
                                 />
                             </div>
                         </div>
                     </div>
                 )}
-                
+
                 {currentStep === 3 && (
-                    // Order confirmation hih
+                    // Order confirmation
                     <div className="max-w-7xl mx-auto px-4 py-10 pt-20 md:p-20 transition-all duration-300 ease-in-out">
                         <OrderConfirmed />
                     </div>
                 )}
-                
+
                 {/* Login Popup */}
                 {showLoginPopup && (
                     <div className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-4">
                         <div className="bg-white rounded-2xl shadow-2xl shadow-amber-400 p-4 md:p-6 w-full max-w-md animate-fade-in border border-gray-200 relative">
-                            <button 
+                            <button
                                 onClick={handleClosePopup}
                                 className="absolute top-2 right-2 text-red-500 hover:text-red-400 transition-colors"
                             >
@@ -442,6 +457,15 @@ function Cart() {
                                     Checkout without Logging In
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                )}
+
+                {isLoading && (
+                    <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm bg-white/30 z-50">
+                        <div className="bg-white/80 p-6 rounded-lg shadow-lg flex flex-col items-center border border-white/40">
+                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500 mb-4"></div>
+                            <p className="text-gray-700">Processing your order...</p>
                         </div>
                     </div>
                 )}

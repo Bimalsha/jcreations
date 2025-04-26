@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, {useEffect, useState} from 'react'
 import BottomNavigator from "../component/BottomNavigator.jsx";
 import Header from "../component/Header.jsx";
 import { IoIosArrowForward } from 'react-icons/io';
@@ -7,6 +7,14 @@ import { IoMdCheckmark } from 'react-icons/io';
 import { motion, AnimatePresence } from 'motion/react';
 
 function Account() {
+    useEffect(() => {
+        // Scroll to top when cart page loads
+        window.scrollTo(0, 0);
+    }, []);
+
+    // Add authentication state
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+
     const [isEditingName, setIsEditingName] = useState(false);
     const [name, setName] = useState('shanila dilnayan');
     const [tempName, setTempName] = useState('');
@@ -18,6 +26,23 @@ function Account() {
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+
+    // Check authentication status on component mount
+    useEffect(() => {
+        // Replace this with your actual authentication check
+        const checkAuthStatus = () => {
+            // Example: Check if token exists in localStorage
+            const token = localStorage.getItem('auth_token');
+            setIsLoggedIn(!!token);
+        };
+
+        checkAuthStatus();
+    }, []);
+
+    const handleLogin = () => {
+        // Redirect to login page
+        window.location.href = '/signin';
+    };
 
     const handleNameClick = () => {
         setTempName(name);
@@ -67,144 +92,175 @@ function Account() {
     return (
         <>
             <section className="pt-10 flex justify-center">
-                <div className={'max-w-7xl w-full mt-10 lg:mt-0 justify-between px-5 lg:px-2'}>
-                    <span className='font-medium text-2xl'>Personal info</span>
+                {!isLoggedIn ? (
+                    // Show login message if user is not logged in
+                    <div className="max-w-7xl w-full mt-10 lg:mt-0 px-5 lg:px-2 flex flex-col items-center text-center py-10">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ duration: 0.3 }}
+                            className="bg-white p-8 rounded-lg shadow-lg shadow-[#FEF3E0] max-w-md w-full"
+                        >
+                            <div className="mb-6 flex justify-center">
+                                <div className="w-20 h-20 bg-[#FEF3E0] rounded-full flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-[#F7A313]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <h2 className="text-xl font-medium mb-3">Please log in to manage your account</h2>
+                            <p className="text-gray-600 mb-6">Sign in to view and update your personal information, track orders, and manage your preferences.</p>
+                            <motion.button
+                                onClick={handleLogin}
+                                className="w-full px-4 py-3 bg-[#000F20] text-white rounded-full hover:bg-[#1a253a] cursor-pointer"
+                                whileHover={{ scale: 1.03 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                Log In
+                            </motion.button>
+                        </motion.div>
+                    </div>
+                ) : (
+                    // Show account management UI if user is logged in
+                    <div className={'max-w-7xl w-full mt-10 lg:mt-0 justify-between px-5 lg:px-2'}>
+                        <span className='font-medium text-2xl'>Personal info</span>
 
-                    <div className='mt-5 flex flex-col '>
-                        <div>
-                            <span className='text-lg'>Name</span>
-                            <AnimatePresence mode="wait">
-                                {!isEditingName ? (
-                                    <motion.div
-                                        key="nameView"
-                                        onClick={handleNameClick}
-                                        className='flex lg:w-2/4 justify-between items-center pb-2 border-b-2 border-[#F0F0F0] cursor-pointer text-[#9F9A9AD6]'
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.2 }}
-                                    >
-                                        <span className='text-sm'>{name}</span>
-                                        <IoIosArrowForward />
-                                    </motion.div>
-                                ) : (
-                                    <motion.div
-                                        key="nameEdit"
-                                        className='flex lg:w-2/4 justify-between items-center pb-2 border-b-2 border-[#F0F0F0]'
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.2 }}
-                                    >
-                                        <input
-                                            type="text"
-                                            value={tempName}
-                                            onChange={(e) => setTempName(e.target.value)}
-                                            className='text-sm focus:outline-none w-full'
-                                            autoFocus
-                                        />
-                                        <div className='flex gap-2'>
-                                            <motion.button
-                                                onClick={handleCancelName}
-                                                className='p-1 rounded-full hover:bg-gray-100'
-                                                whileHover={{ scale: 1.1 }}
-                                                whileTap={{ scale: 0.95 }}
-                                            >
-                                                <IoMdClose className='text-red-500' />
-                                            </motion.button>
-                                            <motion.button
-                                                onClick={handleSaveName}
-                                                className='p-1 rounded-full hover:bg-gray-100'
-                                                whileHover={{ scale: 1.1 }}
-                                                whileTap={{ scale: 0.95 }}
-                                            >
-                                                <IoMdCheckmark className='text-green-500' />
-                                            </motion.button>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                        <div className='mt-5 flex flex-col '>
+                            <div>
+                                <span className='text-lg'>Name</span>
+                                <AnimatePresence mode="wait">
+                                    {!isEditingName ? (
+                                        <motion.div
+                                            key="nameView"
+                                            onClick={handleNameClick}
+                                            className='flex lg:w-2/4 justify-between items-center pb-2 border-b-2 border-[#F0F0F0] cursor-pointer text-[#9F9A9AD6]'
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                        >
+                                            <span className='text-sm'>{name}</span>
+                                            <IoIosArrowForward />
+                                        </motion.div>
+                                    ) : (
+                                        <motion.div
+                                            key="nameEdit"
+                                            className='flex lg:w-2/4 justify-between items-center pb-2 border-b-2 border-[#F0F0F0]'
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                        >
+                                            <input
+                                                type="text"
+                                                value={tempName}
+                                                onChange={(e) => setTempName(e.target.value)}
+                                                className='text-sm focus:outline-none w-full'
+                                                autoFocus
+                                            />
+                                            <div className='flex gap-2'>
+                                                <motion.button
+                                                    onClick={handleCancelName}
+                                                    className='p-1 rounded-full hover:bg-gray-100'
+                                                    whileHover={{ scale: 1.1 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                >
+                                                    <IoMdClose className='text-red-500' />
+                                                </motion.button>
+                                                <motion.button
+                                                    onClick={handleSaveName}
+                                                    className='p-1 rounded-full hover:bg-gray-100'
+                                                    whileHover={{ scale: 1.1 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                >
+                                                    <IoMdCheckmark className='text-green-500' />
+                                                </motion.button>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                            <div className={'mt-4'}>
+                                <span className='text-lg'>Contact Number</span>
+                                <AnimatePresence mode="wait">
+                                    {!isEditingContact ? (
+                                        <motion.div
+                                            key="contactView"
+                                            onClick={handleContactClick}
+                                            className='flex lg:w-2/4 justify-between items-center pb-2 border-b-2 border-[#F0F0F0] cursor-pointer text-[#9F9A9AD6]'
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                        >
+                                            <span className='text-sm'>{contact}</span>
+                                            <IoIosArrowForward />
+                                        </motion.div>
+                                    ) : (
+                                        <motion.div
+                                            key="contactEdit"
+                                            className='flex lg:w-2/4 justify-between items-center pb-2 border-b-2 border-[#F0F0F0]'
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                        >
+                                            <input
+                                                type="tel"
+                                                value={tempContact}
+                                                onChange={(e) => setTempContact(e.target.value)}
+                                                className='text-sm focus:outline-none w-full'
+                                                autoFocus
+                                                placeholder="Enter your phone number"
+                                            />
+                                            <div className='flex gap-2'>
+                                                <motion.button
+                                                    onClick={handleCancelContact}
+                                                    className='p-1 rounded-full hover:bg-gray-100'
+                                                    whileHover={{ scale: 1.1 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                >
+                                                    <IoMdClose className='text-red-500' />
+                                                </motion.button>
+                                                <motion.button
+                                                    onClick={handleSaveContact}
+                                                    className='p-1 rounded-full hover:bg-gray-100'
+                                                    whileHover={{ scale: 1.1 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                >
+                                                    <IoMdCheckmark className='text-green-500' />
+                                                </motion.button>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                            <div className={'mt-4'}>
+                                <span className='text-lg'>Email</span>
+                                <div className='flex lg:w-2/4 justify-between items-center pb-2 border-b-2 border-[#F0F0F0] cursor-pointer text-[#9F9A9AD6]'>
+                                    <span className='text-sm'>example@gmail.com</span>
+                                    <IoIosArrowForward />
+                                </div>
+                            </div>
                         </div>
-                        <div className={'mt-4'}>
-                            <span className='text-lg'>Contact Number</span>
-                            <AnimatePresence mode="wait">
-                                {!isEditingContact ? (
-                                    <motion.div
-                                        key="contactView"
-                                        onClick={handleContactClick}
-                                        className='flex lg:w-2/4 justify-between items-center pb-2 border-b-2 border-[#F0F0F0] cursor-pointer text-[#9F9A9AD6]'
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.2 }}
-                                    >
-                                        <span className='text-sm'>{contact}</span>
-                                        <IoIosArrowForward />
-                                    </motion.div>
-                                ) : (
-                                    <motion.div
-                                        key="contactEdit"
-                                        className='flex lg:w-2/4 justify-between items-center pb-2 border-b-2 border-[#F0F0F0]'
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.2 }}
-                                    >
-                                        <input
-                                            type="tel"
-                                            value={tempContact}
-                                            onChange={(e) => setTempContact(e.target.value)}
-                                            className='text-sm focus:outline-none w-full'
-                                            autoFocus
-                                            placeholder="Enter your phone number"
-                                        />
-                                        <div className='flex gap-2'>
-                                            <motion.button
-                                                onClick={handleCancelContact}
-                                                className='p-1 rounded-full hover:bg-gray-100'
-                                                whileHover={{ scale: 1.1 }}
-                                                whileTap={{ scale: 0.95 }}
-                                            >
-                                                <IoMdClose className='text-red-500' />
-                                            </motion.button>
-                                            <motion.button
-                                                onClick={handleSaveContact}
-                                                className='p-1 rounded-full hover:bg-gray-100'
-                                                whileHover={{ scale: 1.1 }}
-                                                whileTap={{ scale: 0.95 }}
-                                            >
-                                                <IoMdCheckmark className='text-green-500' />
-                                            </motion.button>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                        <div className={'mt-4'}>
-                            <span className='text-lg'>Email</span>
-                            <div className='flex lg:w-2/4 justify-between items-center pb-2 border-b-2 border-[#F0F0F0] cursor-pointer text-[#9F9A9AD6]'>
-                                <span className='text-sm'>example@gmail.com</span>
-                                <IoIosArrowForward />
+
+                        <div className='mt-10 flex flex-col '>
+                            <span className='font-medium text-2xl'>Security</span>
+
+                            <div className={'mt-5'}>
+                                <motion.div
+                                    onClick={handlePasswordClick}
+                                    className='flex lg:w-2/4 justify-between items-center pb-2 cursor-pointer'
+                                    whileHover={{ x: 5 }}
+                                    transition={{ type: "spring", stiffness: 300 }}
+                                >
+                                    <span>Password</span>
+                                    <IoIosArrowForward className={'text-[#9F9A9AD6]'}/>
+                                </motion.div>
                             </div>
                         </div>
                     </div>
-
-                    <div className='mt-10 flex flex-col '>
-                        <span className='font-medium text-2xl'>Security</span>
-
-                        <div className={'mt-5'}>
-                            <motion.div
-                                onClick={handlePasswordClick}
-                                className='flex lg:w-2/4 justify-between items-center pb-2 cursor-pointer'
-                                whileHover={{ x: 5 }}
-                                transition={{ type: "spring", stiffness: 300 }}
-                            >
-                                <span>Password</span>
-                                <IoIosArrowForward className={'text-[#9F9A9AD6]'}/>
-                            </motion.div>
-                        </div>
-                    </div>
-                </div>
+                )}
             </section>
 
             {/* Password Modal */}
