@@ -17,7 +17,7 @@ const CartItem = ({ item, onRemove, onIncreaseQuantity, onDecreaseQuantity }) =>
             aria-label="Remove item"
         >
           <img
-              src="./public/bottomicon/remove.png"
+              src="/bottomicon/remove.png"
               alt="Remove item"
               className="h-5 w-5 sm:h-6 sm:w-6 hover:opacity-80"
           />

@@ -12,35 +12,43 @@ import SignIn from "./client/pages/SignIn.jsx";
 import SingleProduct from "./client/pages/SingleProduct.jsx";
 import AdminLogin from "./admin/pages/AdminLogin.jsx";
 import Dashboard from "./admin/pages/Dashboard.jsx";
+import ProtectedAdminRoute from "./admin/component/ProtectedAdminRoute.jsx";
+import { useEffect } from "react";
+import useAuthStore from "./stores/authStore";
 
 function App() {
     const location = useLocation();
     const isAuthPage = location.pathname === "/signin" || location.pathname === "/adminlogin";
     const isSingleProductPage = location.pathname === "/singleproduct";
     const isDashboardPage = location.pathname.startsWith("/dashboard");
+    const initAuth = useAuthStore(state => state.initAuth);
+
+    // Initialize authentication when app loads
+    useEffect(() => {
+        initAuth();
+    }, [initAuth]);
 
     return (
         <div className="flex flex-col min-h-screen">
             {!isAuthPage && !isDashboardPage && <Header />}
 
             <main className={`flex-grow ${!isAuthPage && !isDashboardPage ? 'pt-16' : ''}`}>
-                {isDashboardPage ? (
-                    <Routes>
+                <Routes location={location} key={location.pathname}>
+                    {/* Public client routes */}
+                    <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+                    <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
+                    <Route path="/order" element={<PageTransition><Order /></PageTransition>} />
+                    <Route path="/account" element={<PageTransition><Account /></PageTransition>} />
+                    <Route path="/signin" element={<PageTransition><SignIn /></PageTransition>} />
+                    <Route path="/singleproduct/:productId" element={<PageTransition><SingleProduct /></PageTransition>} />
+                    {/* Admin routes */}
+                    <Route path="/adminlogin" element={<AdminLogin />} />
+
+                    {/* Protected Admin routes */}
+                    <Route element={<ProtectedAdminRoute />}>
                         <Route path="/dashboard/*" element={<Dashboard />} />
-                    </Routes>
-                ) : (
-                    <PageTransition>
-                        <Routes location={location} key={location.pathname}>
-                            <Route path="/" element={<Home />} />
-                            <Route path="/cart" element={<Cart />} />
-                            <Route path="/order" element={<Order />} />
-                            <Route path="/account" element={<Account />} />
-                            <Route path="/signin" element={<SignIn />} />
-                            <Route path="/singleproduct" element={<SingleProduct />} />
-                            <Route path="/adminlogin" element={<AdminLogin />} />
-                        </Routes>
-                    </PageTransition>
-                )}
+                    </Route>
+                </Routes>
             </main>
 
             {!isAuthPage && !isSingleProductPage && !isDashboardPage && <BottomNavigator />}

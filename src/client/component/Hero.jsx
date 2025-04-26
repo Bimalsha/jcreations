@@ -113,7 +113,7 @@ function Hero() {
                         transition={{duration: 0.3}}
                     >
                         <motion.img
-                            src="../../../public/hero/herolg.webp"
+                            src="/hero/herolg.webp"
                             alt="hero"
                             className={'w-full'}
                             initial={{opacity: 0, scale: 0.95}}
@@ -126,7 +126,7 @@ function Hero() {
                     <div className="w-full  rounded-3xl shadow-lg overflow-hidden">
                         <div className="relative">
                             <img
-                                src="../../../public/hero/home%20back.webp"
+                                src="/hero/home%20back.webp"
                                 alt="Chocolate Cake"
                                 className="w-full h-[250px] object-cover rounded-3xl"
                             />

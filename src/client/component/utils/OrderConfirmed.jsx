@@ -31,7 +31,7 @@ const OrderConfirmed = () => {
 
         {/* Continue Shopping Button */}
         <a 
-          href="/public"
+          href=""
           className="inline-block mt-8 px-20 py-3 bg-yellow-500 text-black font-medium rounded-3xl shadow hover:bg-yellow-600 transition cursor-pointer"
         >
           Continue Shopping

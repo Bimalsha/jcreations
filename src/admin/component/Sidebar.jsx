@@ -1,15 +1,53 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { FaOpencart } from 'react-icons/fa';
 import { CiImageOn } from 'react-icons/ci';
 import { IoSettingsOutline } from 'react-icons/io5';
 import { AiOutlineProduct } from 'react-icons/ai';
 import { IoIosLogOut } from 'react-icons/io';
-import {BsBoxes} from "react-icons/bs";
+import { BsBoxes } from "react-icons/bs";
+import axios from 'axios';
+import toast from 'react-hot-toast';
+import useAuthStore from '../../stores/authStore';
 
 export default function Sidebar() {
+    const navigate = useNavigate();
+    const logout = useAuthStore(state => state.logout);
+
+    const handleLogout = async () => {
+        try {
+            const response = await axios.get('/admin/logout', {}, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.status === 200) {
+                // Clear auth state
+                logout();
+
+                // Show success message
+                toast.success('Logged out successfully');
+
+                // Redirect to login page
+                navigate('/admin/login');
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+
+            let errorMessage = 'Failed to logout. Please try again.';
+
+            if (error.response) {
+                errorMessage = error.response.data?.message || `Error: ${error.response.status}`;
+            }
+
+            toast.error(errorMessage);
+        }
+    };
+
     return (
-        <div className="w-64 h-screen bg-white border-r flex flex-col justify-between">
+        <div className="w-64 h-screen bg-white shadow-lg flex flex-col justify-between">
             <div>
                 <div className="flex items-center px-6 py-6">
                     <img src="/logo.png" alt="Logo" className="h-10 mr-3" />
@@ -24,7 +62,10 @@ export default function Sidebar() {
                 </nav>
             </div>
             <div className="px-4 py-6">
-                <button className="flex items-center text-red-500 hover:text-red-600 cursor-pointer">
+                <button
+                    className="flex items-center text-red-500 hover:text-red-600 cursor-pointer"
+                    onClick={handleLogout}
+                >
                     <IoIosLogOut className="w-5 h-5 mr-2" />
                     Logout
                 </button>
