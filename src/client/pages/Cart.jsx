@@ -35,6 +35,9 @@ function Cart() {
     // Add a new state variable at the top with your other state variables
     const [isLoading, setIsLoading] = useState(false);
 
+    // Add this in the Cart component where other state variables are defined
+    const [shipping, setShipping] = useState(300); // Default shipping cost
+
     const handleRemove = (id) => {
         setCartItems(cartItems.filter((item) => item.id !== id));
     };
@@ -57,9 +60,13 @@ function Cart() {
         );
     };
 
+    const handleShippingChange = (charge) => {
+        setShipping(charge);
+        console.log(`Shipping charge updated to: ${charge}`);
+    };
+
     // Calculate order summary values
     const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-    const shipping = 300; // Fixed shipping cost
     const total = subtotal + shipping;
 
     // Add this useEffect to load Payhere SDK
@@ -377,6 +384,7 @@ function Cart() {
                                 <DeliveryInfo 
                                     deliveryInfo={deliveryInfo}
                                     setDeliveryInfo={setDeliveryInfo}
+                                    onShippingChange={handleShippingChange}
                                 />
                                 <PaymentMethodSelector 
                                     total={total} 
