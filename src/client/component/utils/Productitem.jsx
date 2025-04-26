@@ -167,20 +167,22 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
                 </p>
                 <div className="flex items-center justify-between">
                   <motion.div
-                      className={"flex items-center gap-1"}
+                      className="flex items-center gap-1"
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.2 }}
                   >
-                    <p className="text-[#F7A313] lg:text-lg font-semibold">
-                      Rs.{product.price.toFixed(2)}
-                    </p>
-                    {product.discount_percentage > 0 && (
-                        <p className="text-[#A5A0A0] text-[10px] line-through">
-                          Rs.
-                          {(
-                              product.price *
-                              (1 + product.discount_percentage / 100)
-                          ).toFixed(2)}
+                    {product.discount_percentage > 0 ? (
+                        <>
+                          <p className="text-[#F7A313] lg:text-lg font-semibold">
+                            Rs.{(product.price * (1 - product.discount_percentage / 100)).toFixed(2)}
+                          </p>
+                          <p className="text-[#A5A0A0] text-[10px] line-through">
+                            Rs.{product.price.toFixed(2)}
+                          </p>
+                        </>
+                    ) : (
+                        <p className="text-[#F7A313] lg:text-lg font-semibold">
+                          Rs.{product.price.toFixed(2)}
                         </p>
                     )}
                   </motion.div>
@@ -197,7 +199,7 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
                     <img
                         src="/bottomicon/cart.svg"
                         alt="Add to cart"
-                        className={"lg:w-6 lg:h-6 w-4 h-4"}
+                        className="lg:w-6 lg:h-6 w-4 h-4"
                     />
                   </motion.button>
                 </div>

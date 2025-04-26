@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import api from '../../utils/axios.js';
-import toast from 'react-hot-toast'; // Added import for toast
+import toast from 'react-hot-toast';
 import BottomNavigator from "../component/BottomNavigator.jsx";
 import Header from "../component/Header.jsx";
 import CartNavigator from '../component/utils/CartNavigator.jsx';
@@ -46,26 +46,84 @@ function Cart() {
     // Check if cart is empty
     const isEmpty = cartItems.length === 0;
 
-    const handleRemove = (id) => {
-        setCartItems(cartItems.filter((item) => item.id !== id));
+    const handleRemove = async (id) => {
+        try {
+            // Get cart ID from local storage
+            const cartId = localStorage.getItem('jcreations_cart_id');
+            if (cartId) {
+                // Call API to remove item from cart with cart_id in the request body
+                await api.delete(`/cart/${cartId}/items/${id}`, {
+                    data: { cart_id: parseInt(cartId) }
+                });
+
+                // Update local state after successful API call
+                setCartItems(cartItems.filter((item) => item.id !== id));
+                toast.success("Item removed from cart");
+            } else {
+                toast.error("Cart information not found");
+            }
+        } catch (error) {
+            console.error("Error removing item from cart:", error);
+            toast.error("Failed to remove item from cart");
+        }
     };
 
-    const handleIncreaseQuantity = (id) => {
-        setCartItems(
-            cartItems.map((item) =>
-                item.id === id ? { ...item, quantity: item.quantity + 1 } : item
-            )
-        );
+    const handleIncreaseQuantity = async (id) => {
+        try {
+            const item = cartItems.find(item => item.id === id);
+            if (!item) return;
+
+            // Get cart ID from local storage
+            const cartId = localStorage.getItem('jcreations_cart_id');
+            if (cartId) {
+                // Call API to update quantity with both quantity and cart_id
+                await api.put(`/cart/${cartId}/items/${id}`, {
+                    quantity: item.quantity + 1,
+                    cart_id: parseInt(cartId)
+                });
+
+                // Update local state after successful API call
+                setCartItems(
+                    cartItems.map((cartItem) =>
+                        cartItem.id === id ? { ...cartItem, quantity: cartItem.quantity + 1 } : cartItem
+                    )
+                );
+            } else {
+                toast.error("Cart information not found");
+            }
+        } catch (error) {
+            console.error("Error increasing quantity:", error);
+            toast.error("Failed to update quantity");
+        }
     };
 
-    const handleDecreaseQuantity = (id) => {
-        setCartItems(
-            cartItems.map((item) =>
-                item.id === id && item.quantity > 1
-                    ? { ...item, quantity: item.quantity - 1 }
-                    : item
-            )
-        );
+    const handleDecreaseQuantity = async (id) => {
+        try {
+            const item = cartItems.find(item => item.id === id);
+            if (!item || item.quantity <= 1) return;
+
+            // Get cart ID from local storage
+            const cartId = localStorage.getItem('jcreations_cart_id');
+            if (cartId) {
+                // Call API to update quantity with both quantity and cart_id
+                await api.put(`/cart/${cartId}/items/${id}`, {
+                    quantity: item.quantity - 1,
+                    cart_id: parseInt(cartId)
+                });
+
+                // Update local state after successful API call
+                setCartItems(
+                    cartItems.map((cartItem) =>
+                        cartItem.id === id ? { ...cartItem, quantity: cartItem.quantity - 1 } : cartItem
+                    )
+                );
+            } else {
+                toast.error("Cart information not found");
+            }
+        } catch (error) {
+            console.error("Error decreasing quantity:", error);
+            toast.error("Failed to update quantity");
+        }
     };
 
     const handleShippingChange = (charge) => {
@@ -73,8 +131,16 @@ function Cart() {
         console.log(`Shipping charge updated to: ${charge}`);
     };
 
-    // Calculate order summary values
-    const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    // Calculate order summary values - UPDATED to handle discounts
+    const subtotal = cartItems.reduce((total, item) => {
+        // Calculate the effective price (with discount if applicable)
+        const effectivePrice = item.discount_percentage > 0
+            ? item.price * (1 - item.discount_percentage / 100)
+            : item.price;
+
+        return total + (effectivePrice * item.quantity);
+    }, 0);
+
     const total = subtotal + shipping;
 
     // Add this useEffect to load Payhere SDK
@@ -141,7 +207,8 @@ function Cart() {
                     contact_number: deliveryInfo.contact_number,
                     city: deliveryInfo.city,
                     address: deliveryInfo.address,
-                    req_datetime: new Date().toISOString()
+                    req_datetime: new Date().toISOString(),
+                    total_amount: total.toFixed(2) // Include calculated total with discounts
                 };
 
                 // Add firebase_uid only if available
@@ -168,9 +235,9 @@ function Cart() {
                     response = await api.post('/orders/online', orderData);
                     console.log('Online payment order initiated:', response.data);
 
-                    // Check if the response has the necessary data - UPDATED CONDITION
+                    // Check if the response has the necessary data
                     if (response && response.data) {
-                        const responseData = response.data; // Direct access to data, not nested
+                        const responseData = response.data;
 
                         // Store order ID before initiating payment
                         if (responseData.order_id) {
@@ -182,18 +249,15 @@ function Cart() {
                             console.log("Opening Payhere payment gateway...");
 
                             // Format the items for Payhere
-                            const itemsDescription = responseData.items
-                                ? responseData.items.map(item => `${item.product_name} x${item.quantity}`).join(', ')
-                                : "JCreations Order";
+                            const itemsDescription = cartItems
+                                .map(item => `${item.name} x${item.quantity}`)
+                                .join(', ');
 
                             // Get payment data from the response
                             const paymentData = responseData.payment_data;
 
                             if (!paymentData) {
-                                console.error("Payment data missing from API response");
-                                toast.error("Payment configuration missing. Please try again.");
-                                setIsLoading(false);
-                                return;
+                                throw new Error("Payment data not received from server");
                             }
 
                             // Configure Payhere payment using data from the API response
@@ -202,42 +266,42 @@ function Cart() {
                                 merchant_id: paymentData.merchant_id,
                                 return_url: window.location.origin + '/payment-success',
                                 cancel_url: window.location.origin + '/payment-cancelled',
-                                notify_url: import.meta.env.VITE_PAYHERE_NOTIFY_URL || 'https://jcreations.1000dtechnology.com/api/payhere/notify',
-                                order_id: paymentData.order_id.toString(),
+                                notify_url: paymentData.notify_url,
+                                order_id: paymentData.order_id,
                                 items: itemsDescription,
                                 amount: paymentData.amount,
                                 currency: paymentData.currency,
-                                first_name: deliveryInfo.customer_name.split(' ')[0] || "Customer",
-                                last_name: deliveryInfo.customer_name.split(' ').slice(1).join(' ') || "",
-                                email: "customer@jcreations.com",
+                                first_name: deliveryInfo.customer_name.split(' ')[0],
+                                last_name: deliveryInfo.customer_name.split(' ').slice(1).join(' '),
+                                email: 'customer@example.com',
                                 phone: deliveryInfo.contact_number,
                                 address: deliveryInfo.address,
                                 city: deliveryInfo.city,
-                                country: "Sri Lanka",
+                                country: 'Sri Lanka',
                                 delivery_address: deliveryInfo.address,
                                 delivery_city: deliveryInfo.city,
-                                delivery_country: "Sri Lanka",
-                                hash: paymentData.hash, // Include the hash from API response
-                                custom_1: localStorage.getItem('firebase_uid') || "",
-                                custom_2: localStorage.getItem('jcreations_cart_id') || ""
+                                delivery_country: 'Sri Lanka',
+                                custom_1: responseData.order_id
                             };
 
                             console.log("Payhere payment configuration:", payment);
 
                             // Define event handlers BEFORE calling startPayment
                             window.payhere.onCompleted = function onCompleted(orderId) {
-                                console.log("Payment completed. OrderID:" + orderId);
+                                console.log("Payment completed. Order ID:" + orderId);
+                                toast.success("Payment successful!");
                                 setCurrentStep(3);
                                 setIsLoading(false);
                             };
 
                             window.payhere.onDismissed = function onDismissed() {
                                 console.log("Payment dismissed");
+                                toast.error("Payment cancelled");
                                 setIsLoading(false);
                             };
 
                             window.payhere.onError = function onError(error) {
-                                console.log("Payment error:", error);
+                                console.log("Payment error:" + error);
                                 toast.error("Payment failed: " + error);
                                 setIsLoading(false);
                             };
@@ -245,10 +309,9 @@ function Cart() {
                             // Important: Start the payment AFTER setting up event handlers
                             try {
                                 window.payhere.startPayment(payment);
-                                console.log("Payment window opened");
-                            } catch (payhereError) {
-                                console.error("Error opening payment gateway:", payhereError);
-                                toast.error("Error opening payment gateway. Please try again.");
+                            } catch (e) {
+                                console.error("Error starting Payhere payment:", e);
+                                toast.error("Could not start payment process");
                                 setIsLoading(false);
                             }
 
@@ -349,6 +412,10 @@ function Cart() {
         };
 
         fetchCartData();
+
+        // Check login status
+        const firebaseUid = localStorage.getItem('firebase_uid');
+        setIsLoggedIn(!!firebaseUid);
     }, []);
 
     return (
