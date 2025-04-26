@@ -40,8 +40,7 @@ function App() {
                     <Route path="/order" element={<PageTransition><Order /></PageTransition>} />
                     <Route path="/account" element={<PageTransition><Account /></PageTransition>} />
                     <Route path="/signin" element={<PageTransition><SignIn /></PageTransition>} />
-                    <Route path="/singleproduct" element={<PageTransition><SingleProduct /></PageTransition>} />
-
+                    <Route path="/singleproduct/:productId" element={<PageTransition><SingleProduct /></PageTransition>} />
                     {/* Admin routes */}
                     <Route path="/adminlogin" element={<AdminLogin />} />
 
