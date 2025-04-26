@@ -1,26 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import toast from "react-hot-toast";
+import api from "../../../utils/axios";
+import { useNavigate } from "react-router-dom";
 
 function Productitem() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch(
-          "https://jcreations.1000dtechnology.com/api/products"
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch products");
-        }
-        const data = await response.json();
-        setProducts(data);
+        const response = await api.get("/products");
+        setProducts(response.data);
       } catch (err) {
         console.error("Error fetching products:", err);
-        setError(err.message);
+        setError(err.response?.data?.message || err.message);
       } finally {
         setLoading(false);
       }
@@ -29,47 +26,49 @@ function Productitem() {
     fetchProducts();
   }, []);
 
-const handleAddToCart = async (productId) => {
+  const handleAddToCart = async (productId) => {
     try {
-        const response = await fetch(
-            `https://jcreations.1000dtechnology.com/api/cart/items`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    // Allow credentials and cookies
-                    "Accept": "application/json",
-                },
-                // Enable credentials to send and receive cookies
-                credentials: 'include',
-                body: JSON.stringify({
-                    product_id: productId,
-                    quantity: 1,
-                }),
-            }
-        );
+      // Check if we already have a cart ID in localStorage
+      const existingCartId = localStorage.getItem("jcreations_cart_id");
+      
+      // Prepare the request payload
+      const payload = {
+        product_id: productId,
+        quantity: 1
+      };
+      
+      // Add cart_id to the payload if it exists
+      if (existingCartId) {
+        payload.cart_id = existingCartId;
+        console.log("Using existing cart ID:", existingCartId);
+      }
 
-        if (response.status === 422) {
-            const errorData = await response.json();
-            toast.error(errorData.message);
-            return;
-        }
+      const response = await api.post("/cart/items", payload);
 
-        if (!response.ok) {
-            throw new Error("Failed to add item to cart");
-        }
+      // Save cart ID to localStorage
+      if (response.data && response.data.cart_id) {
+        localStorage.setItem("jcreations_cart_id", response.data.cart_id);
+        console.log("Cart ID saved:", response.data.cart_id);
+      }
 
-        const data = await response.json();
-        console.log("Added to cart:", data);
-        toast.success("Added to cart successfully!");
-
-        // If there's a new session cookie, it will be automatically handled by the browser
-        // due to credentials: 'include'
+      console.log("Added to cart:", response.data);
+      toast.success("Added to cart successfully!");
+      
     } catch (err) {
-        console.error("Error adding to cart:", err);
+      console.log("Error adding to cart:", err);
+      
+      if (err.response) {
+        // Handle specific status codes
+        if (err.response.status === 422) {
+          toast.error(err.response.data.message || "Validation error");
+        } else {
+          toast.error("Failed to add item to cart");
+        }
+      } else {
         toast.error("Failed to add item to cart");
+      }
     }
-};
+  };
 
   if (loading) return <div>Loading products...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -79,12 +78,13 @@ const handleAddToCart = async (productId) => {
       {products.map((product) => (
         <motion.div
           key={product.id}
-          className="bg-white rounded-2xl border-2 border-[#F0F0F0] overflow-hidden flex"
+          className="bg-white rounded-2xl border-2 border-[#F0F0F0] overflow-hidden flex cursor-pointer"
           whileHover={{
             scale: 1.02,
             boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
           }}
           transition={{ duration: 0.3 }}
+          onClick={() => navigate(`/singleproduct/${product.id}`)}
         >
           {/* Left Side: Image and Discount */}
           <div className="relative w-1/3">
@@ -150,7 +150,10 @@ const handleAddToCart = async (productId) => {
                 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ duration: 0.2 }}
-                onClick={() => handleAddToCart(product.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAddToCart(product.id);
+                }}
               >
                 <img
                   src="/bottomicon/cart.svg"
