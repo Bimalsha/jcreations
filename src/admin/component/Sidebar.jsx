@@ -104,7 +104,7 @@ export default function Sidebar() {
                 toast.success('Logged out successfully');
 
                 // Redirect to login page
-                navigate('/admin/login');
+                navigate('/adminlogin');
             }
         } catch (error) {
             console.error('Logout error:', error);
