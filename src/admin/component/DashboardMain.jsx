@@ -26,19 +26,17 @@ function DashboardMain() {
     // Status options for dropdown
     const statusOptions = [
         { value: 'pending', label: 'Pending' },
-        { value: 'processing', label: 'Processing' },
-        { value: 'shipped', label: 'Shipped' },
+        { value: 'in_progress', label: 'In Progress' },
         { value: 'delivered', label: 'Delivered' },
-        { value: 'cancelled', label: 'Cancelled' }
+        { value: 'returned', label: 'Returned' }
     ];
 
     // Status class mapping
     const statusClasses = {
         pending: 'bg-yellow-100 text-yellow-800',
-        processing: 'bg-blue-100 text-blue-800',
-        shipped: 'bg-purple-100 text-purple-800',
+        in_progress: 'bg-blue-100 text-blue-800',
         delivered: 'bg-green-100 text-green-800',
-        cancelled: 'bg-red-100 text-red-800'
+        returned: 'bg-red-100 text-red-800'
     };
 
     useEffect(() => {
@@ -90,7 +88,7 @@ function DashboardMain() {
             if (ordersArray.length > 0) {
                 // Filter orders to display
                 const pending = ordersArray.filter(order =>
-                    order.status === 'pending' || order.status === 'processing'
+                    order.status === 'pending' || order.status === 'in_progress'
                 );
                 setPendingOrders(pending);
                 calculateDailyStats(ordersArray);
@@ -120,31 +118,50 @@ function DashboardMain() {
         }
     };
 
-    // Function to update order status
+// Function to update order status
     const updateOrderStatus = async (orderId, newStatus) => {
         setUpdatingStatus(orderId);
         try {
-            const response = await api.put(`/orders/${orderId}`, {
-                status: newStatus
-            });
+            // Get token from auth store
+            const token = user?.token;
 
-            console.log('Status update response:', response.data);
-            toast.success(`Order #${orderId} status updated to ${newStatus}`);
-
-            // Update the local state
-            setPendingOrders(prevOrders =>
-                prevOrders.map(order =>
-                    order.id === orderId ? {...order, status: newStatus} : order
-                )
+            const response = await api.put(`/admin/orders/${orderId}/status`,
+                { status: newStatus },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
             );
 
-            // Refresh orders if status was changed to delivered or cancelled
-            if (newStatus === 'delivered' || newStatus === 'cancelled') {
-                fetchOrders();
+            // Check for successful status code
+            if (response.status === 200) {
+                console.log('Status update response:', response.data);
+                toast.success(response.data.message || `Order #${response.data.order_id} status updated successfully`);
+
+                // Update the local state with the new status
+                setPendingOrders(prevOrders =>
+                    prevOrders.map(order =>
+                        order.id === orderId ? {...order, status: newStatus} : order
+                    )
+                );
+
+                // Refresh orders if status was changed to delivered or returned
+                if (newStatus === 'delivered' || newStatus === 'returned') {
+                    fetchOrders();
+                }
             }
         } catch (error) {
             console.error('Error updating order status:', error);
-            toast.error(`Failed to update order status: ${error.response?.data?.message || error.message}`);
+            const errorMessage = error.response?.data?.message || error.message;
+            toast.error(`Failed to update status: ${errorMessage}`);
+
+            // Log detailed error info for debugging
+            if (error.response) {
+                console.log('Error response:', error.response.data);
+                console.log('Status code:', error.response.status);
+            }
         } finally {
             setUpdatingStatus(null);
         }
