@@ -51,8 +51,8 @@ function Cart() {
             // Get cart ID from local storage
             const cartId = localStorage.getItem('jcreations_cart_id');
             if (cartId) {
-                // Call API to remove item from cart with cart_id in the request body
-                await api.delete(`/cart/${cartId}/items/${id}`, {
+                // Updated API endpoint to /cart/items/{id}
+                await api.delete(`/cart/items/${id}`, {
                     data: { cart_id: parseInt(cartId) }
                 });
 
@@ -76,8 +76,8 @@ function Cart() {
             // Get cart ID from local storage
             const cartId = localStorage.getItem('jcreations_cart_id');
             if (cartId) {
-                // Call API to update quantity with both quantity and cart_id
-                await api.put(`/cart/${cartId}/items/${id}`, {
+                // Updated API endpoint to /cart/items/{id}
+                await api.put(`/cart/items/${id}`, {
                     quantity: item.quantity + 1,
                     cart_id: parseInt(cartId)
                 });
@@ -105,8 +105,8 @@ function Cart() {
             // Get cart ID from local storage
             const cartId = localStorage.getItem('jcreations_cart_id');
             if (cartId) {
-                // Call API to update quantity with both quantity and cart_id
-                await api.put(`/cart/${cartId}/items/${id}`, {
+                // Updated API endpoint to /cart/items/{id}
+                await api.put(`/cart/items/${id}`, {
                     quantity: item.quantity - 1,
                     cart_id: parseInt(cartId)
                 });
