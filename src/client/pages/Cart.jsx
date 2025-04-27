@@ -21,6 +21,9 @@ function Cart() {
     // Sample cart items (fallback data)
     const [cartItems, setCartItems] = useState([]);
 
+    // Add state to track items being removed
+    const [removingItems, setRemovingItems] = useState([]);
+
     // Replace showCartItems with currentStep to track all three stages
     const [currentStep, setCurrentStep] = useState(1);
 
@@ -48,6 +51,9 @@ function Cart() {
 
     const handleRemove = async (id) => {
         try {
+            // Add item to removing state first for animation
+            setRemovingItems(prev => [...prev, id]);
+
             // Get cart ID from local storage
             const cartId = localStorage.getItem('jcreations_cart_id');
             if (cartId) {
@@ -56,15 +62,23 @@ function Cart() {
                     data: { cart_id: parseInt(cartId) }
                 });
 
-                // Update local state after successful API call
-                setCartItems(cartItems.filter((item) => item.id !== id));
-                toast.success("Item removed from cart");
+                // Short delay for animation to complete
+                setTimeout(() => {
+                    // Update local state after successful API call
+                    setCartItems(cartItems.filter((item) => item.id !== id));
+                    toast.success("Item removed from cart");
+                    // Remove from the removing items array
+                    setRemovingItems(prev => prev.filter(itemId => itemId !== id));
+                }, 300);
             } else {
                 toast.error("Cart information not found");
+                setRemovingItems(prev => prev.filter(itemId => itemId !== id));
             }
         } catch (error) {
             console.error("Error removing item from cart:", error);
             toast.error("Failed to remove item from cart");
+            // Also remove from removing items array in case of error
+            setRemovingItems(prev => prev.filter(itemId => itemId !== id));
         }
     };
 
@@ -131,14 +145,9 @@ function Cart() {
         console.log(`Shipping charge updated to: ${charge}`);
     };
 
-    // Calculate order summary values - UPDATED to handle discounts
+    // Calculate order summary values using the pre-calculated effective price
     const subtotal = cartItems.reduce((total, item) => {
-        // Calculate the effective price (with discount if applicable)
-        const effectivePrice = item.discount_percentage > 0
-            ? item.price * (1 - item.discount_percentage / 100)
-            : item.price;
-
-        return total + (effectivePrice * item.quantity);
+        return total + (item.effectivePrice * item.quantity);
     }, 0);
 
     const total = subtotal + shipping;
@@ -386,17 +395,25 @@ function Cart() {
 
                     if (response.data && response.data.items && response.data.items.length > 0) {
                         // Transform API response to match our component's format
-                        const transformedItems = response.data.items.map(item => ({
-                            id: item.id,
-                            name: item.product.name,
-                            price: item.product.price,
-                            quantity: item.quantity,
-                            image: item.product.images && item.product.images.length > 0
-                                ? `${import.meta.env.VITE_STORAGE_URL}/${item.product.images[0]}`
-                                : "/category/cake.svg", // Default image if none available
-                            product_id: item.product_id,
-                            discount_percentage: item.product.discount_percentage || 0
-                        }));
+                        const transformedItems = response.data.items.map(item => {
+                            // Calculate effective price with discount applied
+                            const effectivePrice = item.product.discount_percentage > 0
+                                ? item.product.price * (1 - item.product.discount_percentage / 100)
+                                : item.product.price;
+
+                            return {
+                                id: item.id,
+                                name: item.product.name,
+                                price: item.product.price,
+                                effectivePrice: effectivePrice, // Store calculated price
+                                quantity: item.quantity,
+                                image: item.product.images && item.product.images.length > 0
+                                    ? `${import.meta.env.VITE_STORAGE_URL}/${item.product.images[0]}`
+                                    : "/category/cake.svg", // Default image if none available
+                                product_id: item.product_id,
+                                discount_percentage: item.product.discount_percentage || 0
+                            };
+                        });
 
                         setCartItems(transformedItems);
                         console.log("Cart data transformed successfully:", transformedItems);
@@ -431,6 +448,7 @@ function Cart() {
                                 onRemove={handleRemove}
                                 onIncreaseQuantity={handleIncreaseQuantity}
                                 onDecreaseQuantity={handleDecreaseQuantity}
+                                removingItems={removingItems} // Pass the removing items array
                             />
                         </div>
                         <div className="w-full md:w-2/5">
