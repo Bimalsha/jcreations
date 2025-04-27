@@ -25,6 +25,7 @@ function Products() {
     const [error, setError] = useState(null);
     const [sortBy, setSortBy] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
+    const [updatingStatus, setUpdatingStatus] = useState(null);
 
     // Check admin authentication
     useEffect(() => {
@@ -82,9 +83,25 @@ function Products() {
     const fetchProducts = async () => {
         setLoading(true);
         try {
-            console.log('Fetching products from API:', import.meta.env.VITE_API_URL + '/products');
+            console.log('Fetching products from admin API');
 
-            const response = await api.get('/products');
+            // Get token from auth store
+            const token = user?.token;
+
+            let response;
+            try {
+                response = await api.get('/admin/products', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                console.log('Successfully fetched from /admin/products');
+            } catch (err) {
+                console.log('Failed to fetch from /admin/products, trying fallback to /products');
+                response = await api.get('/products');
+                console.log('Successfully fetched from /products');
+            }
 
             console.log('API Response status:', response.status);
             console.log('API Response data:', response.data);
@@ -134,6 +151,49 @@ function Products() {
             toast.error('Failed to load products');
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Function to update product status
+    const updateProductStatus = async (productId, newStatus) => {
+        setUpdatingStatus(productId);
+        try {
+            // Get token from auth store
+            const token = user?.token;
+
+            const response = await api.put(`/admin/products/${productId}`,
+                { status: newStatus },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            // Check for successful status code
+            if (response.status === 200) {
+                console.log('Status update response:', response.data);
+                toast.success(`Product status updated to ${newStatus.replace('_', ' ')}`);
+
+                // Update the local state with the new status
+                setProducts(prevProducts =>
+                    prevProducts.map(product =>
+                        product.id === productId ? {...product, status: newStatus} : product
+                    )
+                );
+            }
+        } catch (error) {
+            console.error('Error updating product status:', error);
+            const errorMessage = error.response?.data?.message || error.message;
+            toast.error(`Failed to update status: ${errorMessage}`);
+
+            if (error.response) {
+                console.log('Error response:', error.response.data);
+                console.log('Status code:', error.response.status);
+            }
+        } finally {
+            setUpdatingStatus(null);
         }
     };
 
@@ -191,9 +251,17 @@ function Products() {
         setSearchTerm(e.target.value);
     };
 
+    // Status options for dropdown - updated to include all three states
+    const statusOptions = [
+        { value: 'in_stock', label: 'In Stock' },
+        { value: 'out_of_stock', label: 'Out of Stock' },
+        { value: 'deactive', label: 'Deactive' }
+    ];
+
     const statusClasses = {
         in_stock: 'bg-green-100 text-green-700',
         out_of_stock: 'bg-red-100 text-red-700',
+        deactive: 'bg-gray-100 text-gray-700',
         discontinued: 'bg-gray-100 text-gray-700'
     };
 
@@ -406,11 +474,26 @@ function Products() {
                                                         </button>
                                                     </td>
                                                     <td className="px-4 py-3 whitespace-nowrap w-[10%]">
-                                                            <span
-                                                                className={`px-2 py-1 rounded-full text-xs font-medium ${statusClasses[product.status] || 'bg-gray-100 text-gray-700'}`}
+                                                        {updatingStatus === product.id ? (
+                                                            <div className="w-full flex justify-center">
+                                                                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-amber-500"></div>
+                                                            </div>
+                                                        ) : (
+                                                            <select
+                                                                value={product.status || 'in_stock'}
+                                                                onChange={(e) => updateProductStatus(product.id, e.target.value)}
+                                                                className={`px-2 py-1 rounded-md text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-amber-500 ${statusClasses[product.status] || 'bg-gray-100 text-gray-700'}`}
                                                             >
-                                                                {product.status?.replace('_', ' ') || 'unknown'}
-                                                            </span>
+                                                                {statusOptions.map(option => (
+                                                                    <option
+                                                                        key={option.value}
+                                                                        value={option.value}
+                                                                    >
+                                                                        {option.label}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             ))}
