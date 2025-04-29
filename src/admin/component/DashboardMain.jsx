@@ -86,16 +86,13 @@ function DashboardMain() {
             }
 
             if (ordersArray.length > 0) {
-                // Filter orders to display
-                const pending = ordersArray.filter(order =>
-                    order.status === 'pending' || order.status === 'in_progress'
-                );
-                setPendingOrders(pending);
+                // Keep all orders including delivered and returned
+                setPendingOrders(ordersArray);
                 calculateDailyStats(ordersArray);
                 setCurrentPage(1);
 
-                if (pending.length === 0) {
-                    toast.info('No pending orders found');
+                if (ordersArray.length === 0) {
+                    toast.info('No orders found');
                 }
             } else {
                 setPendingOrders([]);
@@ -118,7 +115,7 @@ function DashboardMain() {
         }
     };
 
-// Function to update order status
+    // Function to update order status
     const updateOrderStatus = async (orderId, newStatus) => {
         setUpdatingStatus(orderId);
         try {
@@ -147,10 +144,8 @@ function DashboardMain() {
                     )
                 );
 
-                // Refresh orders if status was changed to delivered or returned
-                if (newStatus === 'delivered' || newStatus === 'returned') {
-                    fetchOrders();
-                }
+                // No need to fetch orders again as we want to keep all items in the list
+                // Even if status changes to delivered or returned
             }
         } catch (error) {
             console.error('Error updating order status:', error);
@@ -251,7 +246,7 @@ function DashboardMain() {
             </div>
             <div className="h-full w-full bg-white rounded-b-2xl">
                 <div className="px-8 pt-4 flex justify-between">
-                    <span className="text-lg font-semibold">Pending Orders</span>
+                    <span className="text-lg font-semibold">All Orders</span>
                     <button
                         onClick={fetchOrders}
                         className="text-blue-500 hover:text-blue-700 flex items-center gap-1"
@@ -281,7 +276,7 @@ function DashboardMain() {
                             </button>
                         </div>
                     ) : pendingOrders.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">No pending orders found</div>
+                        <div className="text-center py-8 text-gray-500">No orders found</div>
                     ) : (
                         <>
                             <div className="overflow-auto max-h-[calc(100vh-350px)]">
@@ -339,11 +334,30 @@ function DashboardMain() {
                                                         onChange={(e) => updateOrderStatus(order.id, e.target.value)}
                                                         className={`px-2 py-1 rounded-md text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-amber-500 ${statusClasses[order.status] || 'bg-gray-100 text-gray-700'}`}
                                                     >
-                                                        {statusOptions.map(option => (
-                                                            <option key={option.value} value={option.value}>
-                                                                {option.label}
-                                                            </option>
-                                                        ))}
+                                                        {statusOptions.map(option => {
+                                                            // Define status workflow order
+                                                            const statusOrder = {
+                                                                'pending': 0,
+                                                                'in_progress': 1,
+                                                                'delivered': 2,
+                                                                'returned': 3
+                                                            };
+
+                                                            // Disable if option is the current status or comes before it
+                                                            const currentStatusOrder = statusOrder[order.status || 'pending'];
+                                                            const optionStatusOrder = statusOrder[option.value];
+                                                            const shouldDisable = optionStatusOrder <= currentStatusOrder;
+
+                                                            return (
+                                                                <option
+                                                                    key={option.value}
+                                                                    value={option.value}
+                                                                    disabled={shouldDisable}
+                                                                >
+                                                                    {option.label}
+                                                                </option>
+                                                            );
+                                                        })}
                                                     </select>
                                                 )}
                                             </td>

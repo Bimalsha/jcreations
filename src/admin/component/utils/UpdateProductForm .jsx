@@ -12,11 +12,12 @@ const UpdateProductForm = ({ product, onSuccess }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // Track image changes separately
+    // Track image changes
     const [existingImages, setExistingImages] = useState([]);
     const [newImages, setNewImages] = useState([]);
     const [imagePreviews, setImagePreviews] = useState([]);
     const [imageErrors, setImageErrors] = useState({});
+    const [originalImages, setOriginalImages] = useState([]);
 
     const MAX_IMAGES = 3;
     const DEFAULT_IMAGE = "/placeholder.png";
@@ -63,6 +64,9 @@ const UpdateProductForm = ({ product, onSuccess }) => {
                     ? product.images
                     : [product.images];
 
+                // Save the original images list for comparison later
+                setOriginalImages([...imageArray]);
+
                 // Set as existing images - these are paths, not actual files
                 setExistingImages(imageArray);
 
@@ -78,6 +82,7 @@ const UpdateProductForm = ({ product, onSuccess }) => {
 
                 setImagePreviews(previews);
             } else if (product.image) {
+                setOriginalImages([product.image]);
                 setExistingImages([product.image]);
 
                 const preview = product.image.startsWith('data:') || product.image.startsWith('http')
@@ -140,27 +145,41 @@ const UpdateProductForm = ({ product, onSuccess }) => {
     };
 
     const handleRemoveImage = (index) => {
+        console.log(`Removing image at index ${index}`);
         // Need to determine if we're removing an existing or new image
         const totalExisting = existingImages.length;
 
         if (index < totalExisting) {
             // Removing an existing image
+            const removedImage = existingImages[index];
+            console.log(`Removing existing image: ${removedImage}`);
             setExistingImages(prev => prev.filter((_, i) => i !== index));
+            setImagePreviews(prev => prev.filter((_, i) => i !== index));
         } else {
             // Removing a new image (adjust index)
             const newIndex = index - totalExisting;
+            console.log(`Removing new image at index ${newIndex}`);
             setNewImages(prev => prev.filter((_, i) => i !== newIndex));
+            setImagePreviews(prev => prev.filter((_, i) => i !== index));
         }
 
-        // Remove from previews
-        setImagePreviews(prev => prev.filter((_, i) => i !== index));
-
-        // Remove error
-        setImageErrors(prev => {
-            const newErrors = {...prev};
-            delete newErrors[index];
-            return newErrors;
+        // Reindex errors after removal
+        const newErrors = {};
+        Object.keys(imageErrors).forEach(errorIndex => {
+            const numericIndex = parseInt(errorIndex, 10);
+            if (numericIndex < index) {
+                // Keep error indexes below the removed image
+                newErrors[numericIndex] = imageErrors[numericIndex];
+            } else if (numericIndex > index) {
+                // Shift down error indexes above the removed image
+                newErrors[numericIndex - 1] = imageErrors[numericIndex];
+            }
+            // The error at the removed index is dropped
         });
+        setImageErrors(newErrors);
+
+        // Show confirmation of removal
+        toast.success('Image removed successfully');
     };
 
     const handleImageError = (index) => {
@@ -180,7 +199,7 @@ const UpdateProductForm = ({ product, onSuccess }) => {
 
     const handleCancel = () => {
         if (typeof onSuccess === 'function') {
-            onSuccess();
+            onSuccess(false); // Pass false to avoid refreshing the product list
         }
     };
 
@@ -234,26 +253,57 @@ const UpdateProductForm = ({ product, onSuccess }) => {
             formData.append('discount_percentage', discountPercentage || 0);
             formData.append('description', description);
             formData.append('status', product.status || 'in_stock');
+            formData.append('_method', 'PUT'); // Laravel requires this for PUT requests
 
-            // Laravel requires _method for PUT/PATCH requests
-            formData.append('_method', 'PUT');
+            // Simple and explicit image handling
+            // Case 1: All images removed
+            if (existingImages.length === 0 && newImages.length === 0) {
+                formData.append('remove_all_images', 'true');
+            } else {
+                // Case 2: Images have been modified
 
-            // Append existing image paths - use proper array notation for Laravel
-            existingImages.forEach(img => {
-                formData.append('existing_images[]', img);
-            });
+                // Always reset the image slots first
+                formData.append('image1', '');
+                formData.append('image2', '');
+                formData.append('image3', '');
 
-            // Append new image files - use proper array notation for Laravel
-            newImages.forEach(file => {
-                formData.append('images[]', file);
-            });
+                // Compute removed images explicitly (for server logging/processing)
+                const removedImages = originalImages.filter(img => !existingImages.includes(img));
+                if (removedImages.length > 0) {
+                    formData.append('removed_images', JSON.stringify(removedImages));
+                }
 
-            console.log("Sending product update with images:", {
-                existingCount: existingImages.length,
-                newCount: newImages.length
-            });
+                // Add all current images sequentially in order
+                const allImages = [
+                    ...existingImages.map(path => ({ path, isExisting: true })),
+                    ...newImages.map(file => ({ file, isExisting: false }))
+                ];
 
-            // Update product with FormData
+                // Map directly to image1, image2, image3 fields
+                allImages.forEach((image, index) => {
+                    if (index < 3) { // Only handle up to 3 images
+                        const fieldName = `image${index + 1}`;
+                        if (image.isExisting) {
+                            formData.append(fieldName, image.path);
+                        } else {
+                            formData.append(fieldName, image.file);
+                        }
+                    }
+                });
+            }
+
+            console.log("Updating product with images:");
+            console.log(`- Original image count: ${originalImages.length}`);
+            console.log(`- Current image count: ${existingImages.length + newImages.length}`);
+
+            // Debug form data being sent
+            for (let [key, value] of formData.entries()) {
+                if (key.includes('image') || key.includes('remove')) {
+                    console.log(`${key}: ${value instanceof File ? value.name : value}`);
+                }
+            }
+
+            // Send update request
             const response = await api.post(`/admin/products/${product.id}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
@@ -382,20 +432,18 @@ const UpdateProductForm = ({ product, onSuccess }) => {
                                         src={preview}
                                         alt={`product preview ${index + 1}`}
                                         className="w-20 h-20 rounded-lg object-cover shadow-sm"
-                                        onError={(e) => {
-                                            e.target.src = DEFAULT_IMAGE;
-                                            e.target.onerror = null;
-                                            handleImageError(index);
-                                        }}
+                                        onError={() => handleImageError(index)}
                                     />
                                     <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
                                         <button
                                             type="button"
                                             onClick={() => handleRemoveImage(index)}
-                                            className="text-white p-1 mx-1 text-sm"
-                                            title="Remove image"
+                                            className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                                            aria-label="Remove image"
                                         >
-                                            ✕
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
                                         </button>
                                     </div>
                                     {imageErrors[index] && (

@@ -168,6 +168,7 @@ const AddProductForm = ({ onSuccess, initialData, isEditing }) => {
         return isValid;
     };
 
+// Update the handleSubmit function in AddProductForm.jsx
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
@@ -217,9 +218,9 @@ const AddProductForm = ({ onSuccess, initialData, isEditing }) => {
                 image3: null
             });
 
-            // Call success callback
+            // Call success callback with true to indicate refresh is needed
             if (typeof onSuccess === 'function') {
-                onSuccess();
+                onSuccess(true);
             }
         } catch (error) {
             console.error("Error saving product:", error);
