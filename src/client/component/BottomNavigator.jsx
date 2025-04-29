@@ -12,7 +12,7 @@ function BottomNavigator() {
                 <Link to={'/'} type="button"
                       className="inline-flex flex-col items-center justify-center px-5 group relative">
                     <motion.img
-                        src={currentPath === '/' ? "../../../public/bottomicon/homeselect.svg" : "../../../public/bottomicon/home.svg"}
+                        src={currentPath === '/' ? "/bottomicon/homeselect.svg" : "/bottomicon/home.svg"}
                         alt="home"
                         className="w-8"
                         whileHover={{ scale: 1.2 }}
@@ -39,7 +39,7 @@ function BottomNavigator() {
                 <Link to={'/cart'} type="button"
                       className="inline-flex flex-col items-center justify-center px-5 group relative">
                     <motion.img
-                        src={currentPath === '/cart' ? "../../../public/bottomicon/cartselect.svg" : "../../../public/bottomicon/cart.svg"}
+                        src={currentPath === '/cart' ? "/bottomicon/cartselect.svg" : "/bottomicon/cart.svg"}
                         alt="cart"
                         className="w-8"
                         whileHover={{ scale: 1.2 }}
@@ -67,7 +67,7 @@ function BottomNavigator() {
                 <Link to={'/order'} type="button"
                       className="inline-flex flex-col items-center justify-center px-5 group relative">
                     <motion.img
-                        src={currentPath === '/order' ? "../../../public/bottomicon/orderselect.svg" : "../../../public/bottomicon/order.svg"}
+                        src={currentPath === '/order' ? "/bottomicon/orderselect.svg" : "/bottomicon/order.svg"}
                         alt="order"
                         className="w-8"
                         whileHover={{ scale: 1.2 }}
@@ -94,7 +94,7 @@ function BottomNavigator() {
                 <Link to={'/account'} type="button"
                       className="inline-flex flex-col items-center justify-center px-5 group relative">
                     <motion.img
-                        src={currentPath === '/account' ? "../../../public/bottomicon/userselect.svg" : "../../../public/bottomicon/user.svg"}
+                        src={currentPath === '/account' ? "/bottomicon/userselect.svg" : "/bottomicon/user.svg"}
                         alt="account"
                         className="w-8"
                         whileHover={{ scale: 1.2 }}
