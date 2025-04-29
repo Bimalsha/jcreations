@@ -8,18 +8,19 @@ const UpdateProductForm = ({ product, onSuccess }) => {
     const [price, setPrice] = useState("");
     const [discountPercentage, setDiscountPercentage] = useState("");
     const [description, setDescription] = useState("");
-    const [existingImages, setExistingImages] = useState([]);
-    const [newImageFiles, setNewImageFiles] = useState([]);
-    const [imagePreviews, setImagePreviews] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [uploadingImages, setUploadingImages] = useState(false);
     const [error, setError] = useState(null);
+
+    // Track image changes
+    const [existingImages, setExistingImages] = useState([]);
+    const [newImages, setNewImages] = useState([]);
+    const [imagePreviews, setImagePreviews] = useState([]);
     const [imageErrors, setImageErrors] = useState({});
+    const [originalImages, setOriginalImages] = useState([]);
 
     const MAX_IMAGES = 3;
     const DEFAULT_IMAGE = "/placeholder.png";
-    const STORAGE_URL = "https://jcreations.1000dtechnology.com/storage";
 
     // Fetch categories when component mounts
     useEffect(() => {
@@ -31,7 +32,6 @@ const UpdateProductForm = ({ product, onSuccess }) => {
         try {
             const response = await api.get('/categories');
             setCategories(response.data);
-            toast.success("Categories loaded successfully");
         } catch (error) {
             console.error("Error fetching categories:", error);
             setError("Failed to load categories");
@@ -41,7 +41,7 @@ const UpdateProductForm = ({ product, onSuccess }) => {
         }
     };
 
-    // Populate form with product data when component mounts or product changes
+    // Populate form with product data
     useEffect(() => {
         if (product) {
             console.log('Product data received:', product);
@@ -53,229 +53,160 @@ const UpdateProductForm = ({ product, onSuccess }) => {
 
             // Reset image states
             setExistingImages([]);
-            setNewImageFiles([]);
+            setNewImages([]);
             setImagePreviews([]);
             setImageErrors({});
 
             // Handle product images
-            if (product.images) {
+            if (product.images && product.images.length > 0) {
+                // If images is a string, convert to array with single item
                 const imageArray = Array.isArray(product.images)
                     ? product.images
                     : [product.images];
 
+                // Save the original images list for comparison later
+                setOriginalImages([...imageArray]);
+
+                // Set as existing images - these are paths, not actual files
                 setExistingImages(imageArray);
 
-                // Create preview URLs for existing images
+                // Create preview URLs
                 const previews = imageArray.map(img => {
                     if (!img) return DEFAULT_IMAGE;
                     if (img.startsWith('data:') || img.startsWith('http')) {
                         return img;
                     } else {
-                        // Ensure path is properly formatted for storage URL
-                        return `${STORAGE_URL}/${img.replace(/^\/+/, '')}`;
+                        return `${import.meta.env.VITE_STORAGE_URL}/${img}`;
                     }
                 });
 
                 setImagePreviews(previews);
+            } else if (product.image) {
+                setOriginalImages([product.image]);
+                setExistingImages([product.image]);
+
+                const preview = product.image.startsWith('data:') || product.image.startsWith('http')
+                    ? product.image
+                    : `${import.meta.env.VITE_STORAGE_URL}/${product.image}`;
+
+                setImagePreviews([preview]);
             }
         }
     }, [product]);
 
     const handleImageUpload = (e) => {
-        const files = Array.from(e.target.files);
-        if (!files.length) return;
+        const file = e.target.files[0];
+        if (!file) return;
 
-        const totalImages = existingImages.length + newImageFiles.length + files.length;
-        if (totalImages > MAX_IMAGES) {
-            toast.error(`Maximum ${MAX_IMAGES} images allowed per product`);
+        if (existingImages.length + newImages.length >= MAX_IMAGES) {
+            toast.error(`Maximum ${MAX_IMAGES} images allowed`);
             return;
         }
 
-        // Create a copy for validation
-        const validFiles = [];
-        const validationPromises = files.map((file, index) => {
-            return new Promise((resolve) => {
-                // Validate file type (more specific)
-                const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-                if (!validTypes.includes(file.type)) {
-                    toast.error(`${file.name} is not a valid image format. Use JPEG, PNG, WebP or GIF.`, {
-                        duration: 4000,
-                        id: `type-error-${index}`
-                    });
-                    resolve(false);
-                    return;
-                }
+        // Validate file type
+        if (!file.type.match('image.*')) {
+            toast.error("Please select a valid image file");
+            return;
+        }
 
-                // Validate file size (max 5MB)
-                if (file.size > 5 * 1024 * 1024) {
-                    toast.error(`${file.name} exceeds the 5MB size limit`, {
-                        duration: 4000,
-                        id: `size-error-${index}`
-                    });
-                    resolve(false);
-                    return;
-                }
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("Image size must be less than 5MB");
+            return;
+        }
 
-                // Validate image dimensions
-                const img = new Image();
-                img.onload = () => {
-                    URL.revokeObjectURL(img.src); // Clean up
-                    if (img.width < 200 || img.height < 200) {
-                        toast.error(`${file.name} is too small. Minimum dimensions are 200x200px.`, {
-                            duration: 4000,
-                            id: `dimension-error-${index}`
-                        });
-                        resolve(false);
-                    } else {
-                        validFiles.push(file);
-                        resolve(true);
-                    }
-                };
-                img.onerror = () => {
-                    URL.revokeObjectURL(img.src); // Clean up
-                    toast.error(`${file.name} could not be loaded. The file may be corrupted.`, {
-                        duration: 4000,
-                        id: `load-error-${index}`
-                    });
-                    resolve(false);
-                };
-                img.src = URL.createObjectURL(file);
-            });
-        });
+        try {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const dataUrl = reader.result;
 
-        // Process all validations
-        Promise.all(validationPromises).then(results => {
-            const validCount = results.filter(result => result === true).length;
+                // Add to new images - these need to be uploaded
+                setNewImages(prev => [...prev, file]);
 
-            if (validCount === 0) {
-                toast.error('No valid images to upload');
-                return;
-            }
+                // Add preview
+                setImagePreviews(prev => [...prev, dataUrl]);
 
-            if (validCount !== files.length) {
-                toast.success(`${validCount} of ${files.length} images passed validation`, {
-                    duration: 3000
+                // Clear any previous error
+                setImageErrors(prev => {
+                    const newErrors = {...prev};
+                    delete newErrors[imagePreviews.length];
+                    return newErrors;
                 });
-            } else if (validCount > 0) {
-                toast.success(`${validCount} ${validCount === 1 ? 'image' : 'images'} ready for upload`);
-            }
-
-            // Add valid files to state
-            setNewImageFiles(prev => [...prev, ...validFiles]);
-
-            // Generate previews for valid files
-            validFiles.forEach(file => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setImagePreviews(prev => [...prev, reader.result]);
-                };
-                reader.onerror = () => {
-                    toast.error(`Failed to generate preview for: ${file.name}`);
-                };
-                reader.readAsDataURL(file);
-            });
-        }).catch(err => {
-            console.error("Error validating images:", err);
-            toast.error("An unexpected error occurred while processing images");
-        });
+            };
+            reader.onerror = () => {
+                toast.error("Failed to read image file");
+            };
+            reader.readAsDataURL(file);
+        } catch (err) {
+            console.error("Error uploading image:", err);
+            setError("Failed to upload image");
+            toast.error("Failed to upload image");
+        }
     };
 
     const handleRemoveImage = (index) => {
-        // Determine if we're removing an existing image or a new one
-        if (index < existingImages.length) {
+        console.log(`Removing image at index ${index}`);
+        // Need to determine if we're removing an existing or new image
+        const totalExisting = existingImages.length;
+
+        if (index < totalExisting) {
             // Removing an existing image
+            const removedImage = existingImages[index];
+            console.log(`Removing existing image: ${removedImage}`);
             setExistingImages(prev => prev.filter((_, i) => i !== index));
+            setImagePreviews(prev => prev.filter((_, i) => i !== index));
         } else {
-            // Removing a new image (adjust index for the newImageFiles array)
-            const newIndex = index - existingImages.length;
-            setNewImageFiles(prev => prev.filter((_, i) => i !== newIndex));
+            // Removing a new image (adjust index)
+            const newIndex = index - totalExisting;
+            console.log(`Removing new image at index ${newIndex}`);
+            setNewImages(prev => prev.filter((_, i) => i !== newIndex));
+            setImagePreviews(prev => prev.filter((_, i) => i !== index));
         }
 
-        // Remove from previews
-        setImagePreviews(prev => prev.filter((_, i) => i !== index));
-
-        // Remove error for this image
-        setImageErrors(prev => {
-            const newErrors = {...prev};
-            delete newErrors[index];
-            return newErrors;
+        // Reindex errors after removal
+        const newErrors = {};
+        Object.keys(imageErrors).forEach(errorIndex => {
+            const numericIndex = parseInt(errorIndex, 10);
+            if (numericIndex < index) {
+                // Keep error indexes below the removed image
+                newErrors[numericIndex] = imageErrors[numericIndex];
+            } else if (numericIndex > index) {
+                // Shift down error indexes above the removed image
+                newErrors[numericIndex - 1] = imageErrors[numericIndex];
+            }
+            // The error at the removed index is dropped
         });
+        setImageErrors(newErrors);
+
+        // Show confirmation of removal
+        toast.success('Image removed successfully');
     };
 
     const handleImageError = (index) => {
+        toast.dismiss();
+        console.error(`Image ${index} failed to load:`, imagePreviews[index]);
+
         setImageErrors(prev => ({
             ...prev,
             [index]: true
         }));
 
-        toast.error(`Image #${index + 1} failed to load correctly. Please replace it.`, {
-            id: `img-error-${index}`
+        toast.error(`Image ${index + 1} not found or failed to load. Please replace it.`, {
+            duration: 4000,
+            id: `image-error-${index}`
         });
-    };
-
-    // Upload files to storage and get their URLs
-    const uploadImagesToStorage = async () => {
-        if (newImageFiles.length === 0) {
-            // No new images to upload, return existing images
-            return existingImages;
-        }
-
-        setUploadingImages(true);
-        try {
-            toast.loading(`Uploading ${newImageFiles.length} ${newImageFiles.length === 1 ? 'image' : 'images'}...`, {
-                id: "uploading-images"
-            });
-
-            const formData = new FormData();
-            newImageFiles.forEach((file, index) => {
-                formData.append(`images[${index}]`, file);
-            });
-
-            // Upload images to the specified storage URL
-            const response = await api.post('/admin/upload-images', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                },
-                onUploadProgress: (progressEvent) => {
-                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                    if (percentCompleted === 100) {
-                        toast.loading("Processing uploaded images...", { id: "uploading-images" });
-                    }
-                }
-            });
-
-            // Check if upload was successful and return image paths
-            if (response.data && Array.isArray(response.data.images)) {
-                toast.success(`Successfully uploaded ${newImageFiles.length} ${newImageFiles.length === 1 ? 'image' : 'images'}`, {
-                    id: "uploading-images"
-                });
-                // Combine existing images with new uploaded image paths
-                return [...existingImages, ...response.data.images];
-            } else {
-                throw new Error('Server response missing image paths');
-            }
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to upload images", {
-                id: "uploading-images"
-            });
-            console.error("Error uploading images:", error);
-            throw new Error("Failed to upload images: " + (error.response?.data?.message || error.message));
-        } finally {
-            setUploadingImages(false);
-        }
     };
 
     const handleCancel = () => {
         if (typeof onSuccess === 'function') {
-            onSuccess();
+            onSuccess(false); // Pass false to avoid refreshing the product list
         }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(null);
 
-        // Validate form fields
+        // Validate fields
         if (!name.trim()) {
             toast.error("Product name is required");
             return;
@@ -296,13 +227,13 @@ const UpdateProductForm = ({ product, onSuccess }) => {
             return;
         }
 
-        // Check if there's at least one image (existing or new)
-        if (existingImages.length === 0 && newImageFiles.length === 0) {
+        // Check if there's at least one image
+        if (existingImages.length + newImages.length === 0) {
             toast.error("Please add at least one product image");
             return;
         }
 
-        // Check if any images have errors
+        // Check if any images failed to load
         if (Object.keys(imageErrors).length > 0) {
             toast.error("Please replace all invalid images before submitting");
             return;
@@ -310,51 +241,88 @@ const UpdateProductForm = ({ product, onSuccess }) => {
 
         try {
             setLoading(true);
+            setError(null);
 
-            let finalImageArray;
+            // Use FormData for mixed content (text fields + files)
+            const formData = new FormData();
 
-            if (newImageFiles.length > 0) {
-                // First, upload any new images and get their paths
-                toast.loading("Uploading images...", { id: "uploading-images" });
-                finalImageArray = await uploadImagesToStorage();
-                toast.dismiss("uploading-images");
+            // Append text fields
+            formData.append('name', name);
+            formData.append('category_id', category);
+            formData.append('price', price);
+            formData.append('discount_percentage', discountPercentage || 0);
+            formData.append('description', description);
+            formData.append('status', product.status || 'in_stock');
+            formData.append('_method', 'PUT'); // Laravel requires this for PUT requests
+
+            // Simple and explicit image handling
+            // Case 1: All images removed
+            if (existingImages.length === 0 && newImages.length === 0) {
+                formData.append('remove_all_images', 'true');
             } else {
-                // No new images, just use existing ones
-                finalImageArray = existingImages;
+                // Case 2: Images have been modified
+
+                // Always reset the image slots first
+                formData.append('image1', '');
+                formData.append('image2', '');
+                formData.append('image3', '');
+
+                // Compute removed images explicitly (for server logging/processing)
+                const removedImages = originalImages.filter(img => !existingImages.includes(img));
+                if (removedImages.length > 0) {
+                    formData.append('removed_images', JSON.stringify(removedImages));
+                }
+
+                // Add all current images sequentially in order
+                const allImages = [
+                    ...existingImages.map(path => ({ path, isExisting: true })),
+                    ...newImages.map(file => ({ file, isExisting: false }))
+                ];
+
+                // Map directly to image1, image2, image3 fields
+                allImages.forEach((image, index) => {
+                    if (index < 3) { // Only handle up to 3 images
+                        const fieldName = `image${index + 1}`;
+                        if (image.isExisting) {
+                            formData.append(fieldName, image.path);
+                        } else {
+                            formData.append(fieldName, image.file);
+                        }
+                    }
+                });
             }
 
-            toast.loading("Updating product...", { id: "updating-product" });
+            console.log("Updating product with images:");
+            console.log(`- Original image count: ${originalImages.length}`);
+            console.log(`- Current image count: ${existingImages.length + newImages.length}`);
 
-            // Prepare the product data with images array
-            const productData = {
-                id: product.id,
-                name,
-                description,
-                images: finalImageArray,
-                category_id: parseInt(category),
-                price: parseFloat(price),
-                discount_percentage: discountPercentage ? parseFloat(discountPercentage) : 0,
-                status: product.status || "in_stock",
-                updated_at: new Date().toISOString()
-            };
+            // Debug form data being sent
+            for (let [key, value] of formData.entries()) {
+                if (key.includes('image') || key.includes('remove')) {
+                    console.log(`${key}: ${value instanceof File ? value.name : value}`);
+                }
+            }
 
-            // Update the product
-            const response = await api.post(`/admin/products/${product.id}`, productData);
+            // Send update request
+            const response = await api.post(`/admin/products/${product.id}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            });
 
-            toast.dismiss("updating-product");
+            console.log("API response:", response);
 
             if (response.status >= 200 && response.status < 300) {
                 toast.success("Product updated successfully");
-                // Call success callback if provided
                 if (typeof onSuccess === 'function') {
-                    onSuccess();
+                    onSuccess(true); // Pass true to refresh product list
                 }
             } else {
                 throw new Error("Failed to update product");
             }
         } catch (error) {
             console.error("Error updating product:", error);
-            const errorMessage = error.response?.data?.message || error.message || "Failed to update product";
+            const errorMessage = error.response?.data?.message || "Failed to update product";
             setError(errorMessage);
             toast.error(errorMessage);
         } finally {
@@ -453,10 +421,10 @@ const UpdateProductForm = ({ product, onSuccess }) => {
                 {/* Image Upload */}
                 <div className="bg-white/30 backdrop-blur-sm p-4 rounded-lg border border-gray-200 transition-all duration-300 hover:shadow-md">
                     <p className="text-sm mb-3 text-gray-600 font-medium">
-                        Product Images <span className="text-xs text-gray-400">(At least 1 image required, max {MAX_IMAGES})</span>
+                        Product Images <span className="text-xs text-gray-400">(At least 1 image required, max 3)</span>
                     </p>
                     <div className="flex flex-wrap items-center gap-4">
-                        {/* Show image previews */}
+                        {/* Show existing images */}
                         {imagePreviews.length > 0 ? (
                             imagePreviews.map((preview, index) => (
                                 <div key={index} className={`relative group ${imageErrors[index] ? 'border-2 border-red-500 rounded-lg' : ''}`}>
@@ -464,20 +432,18 @@ const UpdateProductForm = ({ product, onSuccess }) => {
                                         src={preview}
                                         alt={`product preview ${index + 1}`}
                                         className="w-20 h-20 rounded-lg object-cover shadow-sm"
-                                        onError={(e) => {
-                                            e.target.src = DEFAULT_IMAGE;
-                                            e.target.onerror = null;
-                                            handleImageError(index);
-                                        }}
+                                        onError={() => handleImageError(index)}
                                     />
                                     <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
                                         <button
                                             type="button"
                                             onClick={() => handleRemoveImage(index)}
-                                            className="text-white p-1 mx-1 text-sm"
-                                            title="Remove image"
+                                            className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                                            aria-label="Remove image"
                                         >
-                                            ✕
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
                                         </button>
                                     </div>
                                     {imageErrors[index] && (
@@ -488,29 +454,20 @@ const UpdateProductForm = ({ product, onSuccess }) => {
                                 </div>
                             ))
                         ) : (
-                            <label className="cursor-pointer">
-                                <div className="relative border-2 border-dashed border-yellow-400 rounded-lg w-20 h-20 bg-white/50 flex flex-col items-center justify-center group hover:bg-white/80 transition-all">
-                                    <img
-                                        src={DEFAULT_IMAGE}
-                                        alt="default product"
-                                        className="w-12 h-12 object-cover opacity-40 group-hover:opacity-60 transition-opacity"
-                                    />
-                                    <span className="text-xs text-gray-500 font-medium mt-1">Required</span>
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/10 rounded-lg transition-opacity">
-                                        <span className="text-xs font-medium text-gray-800">Click to add</span>
-                                    </div>
-                                </div>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleImageUpload}
-                                    className="hidden"
+                            <div className="relative group">
+                                <img
+                                    src={DEFAULT_IMAGE}
+                                    alt="default product"
+                                    className="w-20 h-20 rounded-lg object-cover shadow-sm opacity-50"
                                 />
-                            </label>
+                                <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-xs">
+                                    No Image
+                                </div>
+                            </div>
                         )}
 
-                        {/* Show upload button if less than MAX_IMAGES and at least one image is already added */}
-                        {imagePreviews.length > 0 && imagePreviews.length < MAX_IMAGES && (
+                        {/* Show upload button if less than MAX_IMAGES */}
+                        {imagePreviews.length < MAX_IMAGES && (
                             <label className="border-2 border-dashed border-gray-300 rounded-lg w-20 h-20 flex items-center justify-center cursor-pointer bg-white/50 hover:bg-white/80 transition-all">
                                 <input
                                     type="file"
@@ -542,16 +499,16 @@ const UpdateProductForm = ({ product, onSuccess }) => {
                         type="button"
                         onClick={handleCancel}
                         className="border border-gray-400 text-gray-700 px-4 py-2 rounded-full hover:bg-gray-100 transition-all"
-                        disabled={loading || uploadingImages}
+                        disabled={loading}
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         className="bg-black text-white px-5 py-2 rounded-full hover:bg-gray-800 transition-all shadow-md disabled:bg-gray-500 disabled:cursor-not-allowed"
-                        disabled={loading || uploadingImages}
+                        disabled={loading}
                     >
-                        {loading || uploadingImages ? "Processing..." : "Update Product"}
+                        {loading ? "Updating..." : "Update Product"}
                     </button>
                 </div>
             </form>

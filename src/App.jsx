@@ -15,6 +15,10 @@ import Dashboard from "./admin/pages/Dashboard.jsx";
 import ProtectedAdminRoute from "./admin/component/ProtectedAdminRoute.jsx";
 import { useEffect } from "react";
 import useAuthStore from "./stores/authStore";
+import {Toaster} from "react-hot-toast";
+import Refund from "./client/component/Refund.jsx";
+import Privacy from "./client/component/Privacy.jsx";
+import Terms from "./client/component/Terms.jsx";
 
 function App() {
     const location = useLocation();
@@ -31,6 +35,10 @@ function App() {
     return (
         <div className="flex flex-col min-h-screen">
             {!isAuthPage && !isDashboardPage && <Header />}
+            <Toaster
+                position="top-right"
+                reverseOrder={false}
+            />
 
             <main className={`flex-grow ${!isAuthPage && !isDashboardPage ? 'pt-16' : ''}`}>
                 <Routes location={location} key={location.pathname}>
@@ -40,8 +48,11 @@ function App() {
                     <Route path="/order" element={<PageTransition><Order /></PageTransition>} />
                     <Route path="/account" element={<PageTransition><Account /></PageTransition>} />
                     <Route path="/signin" element={<PageTransition><SignIn /></PageTransition>} />
-                    <Route path="/singleproduct" element={<PageTransition><SingleProduct /></PageTransition>} />
+                    <Route path="/singleproduct/:productId" element={<PageTransition><SingleProduct /></PageTransition>} />
+                    <Route path="/refund-policy" element={<PageTransition><Refund /></PageTransition>} />
 
+                    <Route path="/privacy-policy" element={<PageTransition><Privacy /></PageTransition>} />
+                    <Route path="/terms-conditions" element={<PageTransition><Terms /></PageTransition>} />
                     {/* Admin routes */}
                     <Route path="/adminlogin" element={<AdminLogin />} />
 
