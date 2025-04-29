@@ -110,7 +110,8 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
                 onClick={() => handleProductClick(product.id)}
             >
               <div className="relative w-1/3">
-                {product.discount_percentage > 0 && (
+                {/* Only show discount tag for in-stock products with discounts */}
+                {product.discount_percentage > 0 && product.status === "in_stock" && (
                     <motion.div
                         className="absolute top-0 left-0 bg-[#F7A313] text-white py-1 px-6 rounded-br-2xl text-sm w-full text-center font-semibold"
                         whileHover={{
@@ -122,12 +123,27 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
                       {product.discount_percentage}% OFF
                     </motion.div>
                 )}
+
+                {/* Show Out of Stock tag when product is unavailable */}
+                {product.status !== "in_stock" && (
+                    <motion.div
+                        className="absolute top-0 left-0 bg-gray-500 text-white py-1 px-6 rounded-br-2xl text-sm w-full text-center font-semibold"
+                        whileHover={{
+                          backgroundColor: "#3a3a3a",
+                          y: [0, -2, 0],
+                        }}
+                        transition={{ duration: 0.5 }}
+                    >
+                      Out of Stock
+                    </motion.div>
+                )}
+
                 <div className="w-full h-full flex justify-center items-center">
                   <motion.img
                       src={`https://jcreations.1000dtechnology.com/storage/${product.images[0]}`}
                       alt={product.name}
-                      className="lg:w-[130px] lg:h-[130px] w-[90px] h-[90px] object-cover rounded-2xl"
-                      whileHover={{ scale: 1.1 }}
+                      className={`lg:w-[130px] lg:h-[130px] w-[90px] h-[90px] object-cover rounded-2xl ${product.status !== "in_stock" ? 'opacity-70' : ''}`}
+                      whileHover={{ scale: product.status === "in_stock" ? 1.1 : 1 }}
                       transition={{ type: "spring", stiffness: 300 }}
                   />
                 </div>
@@ -141,9 +157,24 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
                 >
                   {product.name}
                 </motion.h2>
-                <p className="text-[#A5A0A0] text-sm mb-4 text-[10px]">
-                  {product.description}
+                <p className="text-[#A5A0A0] text-sm mb-2 text-[10px]">
+                  {product.description && (product.description.length > 100 ? product.description.slice(0, 100) + "..." : product.description)}
                 </p>
+
+                {/* Product Status Field */}
+                <div className="mb-2 flex items-center">
+
+                  {product.status === "in_stock" ? (
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                  In Stock
+                </span>
+                  ) : (
+                      <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full">
+                  Out of Stock
+                </span>
+                  )}
+                </div>
+
                 <div className="flex items-center justify-between">
                   <motion.div
                       className="flex items-center gap-1"
@@ -165,15 +196,17 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
                         </p>
                     )}
                   </motion.div>
+
+                  {/* Disable Add to Cart button for out-of-stock products */}
                   <motion.button
-                      className="bg-[#F7A313] hover:bg-yellow-600 text-white font-bold p-2 rounded-full"
+                      className={`${product.status === "in_stock" ? 'bg-[#F7A313] hover:bg-yellow-600' : 'bg-gray-400 cursor-not-allowed'} text-white font-bold p-2 rounded-full`}
                       whileHover={{
-                        scale: 1.1,
-                        backgroundColor: "#e69200",
+                        scale: product.status === "in_stock" ? 1.1 : 1,
+                        backgroundColor: product.status === "in_stock" ? "#e69200" : undefined,
                       }}
-                      whileTap={{ scale: 0.95 }}
+                      whileTap={{ scale: product.status === "in_stock" ? 0.95 : 1 }}
                       transition={{ duration: 0.2 }}
-                      onClick={(e) => handleAddToCart(product.id, e)}
+                      onClick={(e) => product.status === "in_stock" && handleAddToCart(product.id, e)}
                   >
                     <img
                         src="/bottomicon/cart.svg"
