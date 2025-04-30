@@ -1,8 +1,11 @@
 import React from 'react'
 import '../../../index.css';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 function Newitem({ product }) {
+    const navigate = useNavigate();
+
     // Calculate effective price after discount
     const effectivePrice = product.discount_percentage
         ? product.price - (product.price * product.discount_percentage / 100)
@@ -13,6 +16,10 @@ function Newitem({ product }) {
         return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
     };
 
+    const handleProductClick = () => {
+        navigate(`/singleproduct/${product.id}`);
+    };
+
     return (
         <motion.div
             className="bg-white shadow-lg rounded-3xl cursor-pointer hover:shadow-xl transition-shadow"
@@ -20,6 +27,7 @@ function Newitem({ product }) {
                 scale: 1.03,
                 transition: { duration: 0.3 }
             }}
+            onClick={handleProductClick}
         >
             <div className="relative flex justify-center">
                 <motion.img
@@ -49,7 +57,7 @@ function Newitem({ product }) {
                     {product.name}
                 </motion.h3>
                 <p className="text-[#B7B3B3] text-[10px] mt-1 text-justify">
-                    {truncateDescription(product.description)}
+                    {truncateDescription(product.description, 50)}
                 </p>
                 <div className="flex gap-3 items-center my-2">
                     <motion.span
