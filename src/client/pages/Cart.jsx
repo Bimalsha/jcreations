@@ -168,7 +168,7 @@ function Cart() {
         };
     }, []);
 
-    // Update the handleCheckout function with Payhere SDK implementation
+    // Update the handleCheckout function to skip login dialog if user is logged in
     const handleCheckout = async () => {
         // Don't proceed if cart is empty
         if (isEmpty) {
@@ -176,12 +176,15 @@ function Cart() {
         }
 
         if (currentStep === 1) {
-            // Check if user is logged in
-            if (!isLoggedIn) {
+            // Check if user is logged in - directly check localStorage
+            const userId = localStorage.getItem('jcreations_user_uid');
+            if (!userId) {
+                // Only show login popup if no user ID exists
                 setShowLoginPopup(true);
                 return;
             }
-            // Move from cart to check out
+
+            // Move from cart to checkout immediately if user is logged in
             setCurrentStep(2);
             console.log("Proceeding to checkout with items:", cartItems);
         } else if (currentStep === 2) {
@@ -206,8 +209,8 @@ function Cart() {
                     return;
                 }
 
-                // Get firebase UID if available
-                const firebaseUid = localStorage.getItem('firebase_uid');
+                // Get Firebase UID from the correct localStorage key
+                const userId = localStorage.getItem('jcreations_user_uid');
 
                 // Prepare request body
                 const orderData = {
@@ -221,8 +224,8 @@ function Cart() {
                 };
 
                 // Add firebase_uid only if available
-                if (firebaseUid) {
-                    orderData.firebase_uid = firebaseUid;
+                if (userId) {
+                    orderData.firebase_uid = userId;
                 }
 
                 let response;
@@ -371,7 +374,7 @@ function Cart() {
         // Redirect to login page
         console.log("Redirecting to login page");
         // Implementation would depend on your routing setup
-        // window.location.href = '/login';
+        window.location.href = '/signin';
         setShowLoginPopup(false);
     };
 
@@ -430,9 +433,9 @@ function Cart() {
 
         fetchCartData();
 
-        // Check login status
-        const firebaseUid = localStorage.getItem('firebase_uid');
-        setIsLoggedIn(!!firebaseUid);
+        // Check login status using the correct localStorage key
+        const userId = localStorage.getItem('jcreations_user_uid');
+        setIsLoggedIn(!!userId);
     }, []);
 
     return (
