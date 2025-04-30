@@ -216,6 +216,9 @@ function Cart() {
                                 console.log("Payment completed. OrderID:" + orderId);
                                 setCurrentStep(3);
                                 setIsLoading(false);
+                                localStorage.removeItem('jcreations_cart_id');
+
+
                             };
                             
                             window.payhere.onDismissed = function onDismissed() {
