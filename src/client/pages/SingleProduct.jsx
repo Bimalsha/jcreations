@@ -29,7 +29,7 @@ function SingleProduct() {
                             </div>
                             <div className="w-full h-full flex justify-center items-center">
                                 <img
-                                    src="../../../../public/cake.jpg"
+                                    src="..//cake.jpg"
                                     alt="Chocolate Cake"
                                     className="w-full h-full max-w-xs lg:max-w-md object-cover rounded-2xl"
                                 />
