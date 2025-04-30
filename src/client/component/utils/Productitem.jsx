@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 
+
 function Productitem() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,47 +30,41 @@ function Productitem() {
     fetchProducts();
   }, []);
 
-const handleAddToCart = async (productId) => {
+  const handleAddToCart = async (productId) => {
     try {
-        const response = await fetch(
-            `https://jcreations.1000dtechnology.com/api/cart/items`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    // Allow credentials and cookies
-                    "Accept": "application/json",
-                },
-                // Enable credentials to send and receive cookies
-                credentials: 'include',
-                body: JSON.stringify({
-                    product_id: productId,
-                    quantity: 1,
-                }),
-            }
-        );
-
-        if (response.status === 422) {
-            const errorData = await response.json();
-            toast.error(errorData.message);
-            return;
+      const response = await fetch(
+        `https://jcreations.1000dtechnology.com/api/cart/items`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // Remove credentials for now until backend CORS is configured
+          body: JSON.stringify({
+            product_id: productId,
+            quantity: 1,
+          }),
         }
+      );
 
-        if (!response.ok) {
-            throw new Error("Failed to add item to cart");
-        }
+      if (response.status === 422) {
+        const errorData = await response.json();
+        toast.error(errorData.message);
+        return;
+      }
 
-        const data = await response.json();
-        console.log("Added to cart:", data);
-        toast.success("Added to cart successfully!");
+      if (!response.ok) {
+        throw new Error("Failed to add item to cart");
+      }
 
-        // If there's a new session cookie, it will be automatically handled by the browser
-        // due to credentials: 'include'
+      const data = await response.json();
+      console.log("Added to cart:", data);
+      toast.success("Added to cart successfully!");
     } catch (err) {
-        console.error("Error adding to cart:", err);
-        toast.error("Failed to add item to cart");
+      console.error("Error adding to cart:", err);
+      toast.error("Failed to add item to cart");
     }
-};
+  };
 
   if (loading) return <div>Loading products...</div>;
   if (error) return <div>Error: {error}</div>;
