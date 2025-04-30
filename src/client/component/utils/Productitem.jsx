@@ -140,7 +140,7 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
 
                 <div className="w-full h-full flex justify-center items-center">
                   <motion.img
-                      src={`https://jcreations.1000dtechnology.com/storage/${product.images[0]}`}
+                      src={`${import.meta.env.VITE_STORAGE_URL}/${product.images[0]}`}
                       alt={product.name}
                       className={`lg:w-[130px] lg:h-[130px] w-[90px] h-[90px] object-cover rounded-2xl ${product.status !== "in_stock" ? 'opacity-70' : ''}`}
                       whileHover={{ scale: product.status === "in_stock" ? 1.1 : 1 }}
