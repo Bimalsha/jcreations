@@ -1,16 +1,24 @@
-import React, {useEffect} from 'react'
+// src/client/component/Orders.jsx
+import React, { useEffect } from 'react';
 import Orderitem from "./utils/Orderitem.jsx";
 
-function Orders({ onViewDetails }) {
+function Orders({ orders = [], onViewDetails }) {
     useEffect(() => {
-        // Scroll to top when cart page loads
+        // Scroll to top when component loads
         window.scrollTo(0, 0);
     }, []);
+
     return (
-        <>
-            <Orderitem onViewDetails={onViewDetails} />
-        </>
-    )
+        <div className="my-6 space-y-4">
+            {orders.map((order) => (
+                <Orderitem
+                    key={order.id}
+                    order={order}
+                    onViewDetails={() => onViewDetails(order.id)}
+                />
+            ))}
+        </div>
+    );
 }
 
-export default Orders
+export default Orders;
