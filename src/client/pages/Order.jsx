@@ -1,8 +1,13 @@
 // src/client/pages/Order.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Orders from "../component/Orders.jsx";
 import OrderDetails from "../component/orderDetails.jsx";
 import { motion } from 'framer-motion';
+import api from "../../utils/axios.js";
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import { FaGoogle, FaFacebook } from 'react-icons/fa';
+import { FiMail } from 'react-icons/fi';
 
 function Order() {
     const [showDetails, setShowDetails] = useState(false);
@@ -10,147 +15,230 @@ function Order() {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [orders, setOrders] = useState([]);
+    const [error, setError] = useState(null);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [limit, setLimit] = useState(10);
+    const [hasMore, setHasMore] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(true);
+    const navigate = useNavigate();
 
-    // Enhanced sample order data with more realistic values
-    const sampleOrders = [
-        {
-            "id": 1001,
-            "customer_name": "Bimalsha Weerasinghe",
-            "contact_number": "0771234567",
-            "delivery_location_id": 5,
-            "address": "123 Temple Road, Colombo 05",
-            "firebase_uid": "user123",
-            "status": "delivered",
-            "payment_type": "cash_on_delivery",
-            "payment_status": "completed",
-            "total_amount": 2850.00,
-            "shipping_charge": 350.00,
-            "order_datetime": "2023-07-15T14:30:00Z",
-            "req_datetime": "2023-07-16T12:00:00Z",
-            "orderItems": [
-                {
-                    "id": 2001,
-                    "order_id": 1001,
-                    "product_name": "Spicy Chicken Burger",
-                    "quantity": 2,
-                    "unit_price": 750.00,
-                    "total_price": 1500.00
-                },
-                {
-                    "id": 2002,
-                    "order_id": 1001,
-                    "product_name": "French Fries Large",
-                    "quantity": 1,
-                    "unit_price": 450.00,
-                    "total_price": 450.00
-                },
-                {
-                    "id": 2003,
-                    "order_id": 1001,
-                    "product_name": "Chocolate Milkshake",
-                    "quantity": 2,
-                    "unit_price": 450.00,
-                    "total_price": 900.00
+    // Fetch orders from API
+    const fetchOrders = useCallback(async (currentLimit = 10, isLoadingMore = false) => {
+        try {
+            if (isLoadingMore) {
+                setLoadingMore(true);
+            } else {
+                setIsLoading(true);
+            }
+            setError(null);
+
+            // Get firebase_uid from localStorage
+            const uid = localStorage.getItem('jcreations_user_uid');
+
+            if (!uid) {
+                console.error("No firebase_uid found in localStorage");
+                setIsLoggedIn(false);
+                setIsLoading(false);
+                return;
+            }
+
+            console.log(`Fetching orders for uid: ${uid} with limit: ${currentLimit}`);
+            const response = await api.get(`/user/${uid}/orders/${currentLimit}`);
+
+            // Validate and normalize order data
+            if (response.data && Array.isArray(response.data)) {
+                const normalizedOrders = response.data.map(order => {
+                    // Map orderItems to the format expected by OrderDetails component
+                    const mappedOrderItems = Array.isArray(order.orderItems)
+                        ? order.orderItems.map(item => ({
+                            id: item.id,
+                            order_id: item.order_id,
+                            product_name: item.product_name || "Unknown Product",
+                            quantity: parseInt(item.quantity) || 1,
+                            price: parseFloat(item.unit_price) || 0,
+                            subtotal: parseFloat(item.total_price) || 0
+                        }))
+                        : [];
+
+                    console.log("Mapped order items:", mappedOrderItems);
+
+                    return {
+                        ...order,
+                        orderItems: mappedOrderItems,
+                        total_amount: parseFloat(order.total_amount) || 0,
+                        shipping_charge: parseFloat(order.shipping_charge) || 0
+                    };
+                });
+
+                if (isLoadingMore) {
+                    setOrders(prev => [...prev, ...normalizedOrders]);
+                } else {
+                    setOrders(normalizedOrders);
                 }
-            ]
-        },
-        {
-            "id": 1002,
-            "customer_name": "Bimalsha Weerasinghe",
-            "contact_number": "0771234567",
-            "delivery_location_id": 6,
-            "address": "123 Temple Road, Colombo 05",
-            "firebase_uid": "user123",
-            "status": "pending",
-            "payment_type": "online_payment",
-            "payment_status": "pending",
-            "total_amount": 3200.00,
-            "shipping_charge": 400.00,
-            "order_datetime": "2023-08-20T10:15:00Z",
-            "req_datetime": "2023-08-20T18:30:00Z",
-            "orderItems": [
-                {
-                    "id": 2004,
-                    "order_id": 1002,
-                    "product_name": "Family Meal Deal",
-                    "quantity": 1,
-                    "unit_price": 3200.00,
-                    "total_price": 3200.00
-                }
-            ]
-        },
-        {
-            "id": 1003,
-            "customer_name": "Bimalsha Weerasinghe",
-            "contact_number": "0771234567",
-            "delivery_location_id": 7,
-            "address": "123 Temple Road, Colombo 05",
-            "firebase_uid": "user123",
-            "status": "processing",
-            "payment_type": "card_payment",
-            "payment_status": "completed",
-            "total_amount": 1950.00,
-            "shipping_charge": 350.00,
-            "order_datetime": "2023-09-05T19:45:00Z",
-            "req_datetime": "2023-09-05T20:30:00Z",
-            "orderItems": [
-                {
-                    "id": 2005,
-                    "order_id": 1003,
-                    "product_name": "Grilled Chicken Sandwich",
-                    "quantity": 1,
-                    "unit_price": 650.00,
-                    "total_price": 650.00
-                },
-                {
-                    "id": 2006,
-                    "order_id": 1003,
-                    "product_name": "Caesar Salad",
-                    "quantity": 1,
-                    "unit_price": 550.00,
-                    "total_price": 550.00
-                },
-                {
-                    "id": 2007,
-                    "order_id": 1003,
-                    "product_name": "Iced Coffee",
-                    "quantity": 2,
-                    "unit_price": 375.00,
-                    "total_price": 750.00
-                }
-            ]
+                setHasMore(response.data.length >= 10);
+
+                console.log("Normalized orders:", normalizedOrders);
+            } else {
+                if (!isLoadingMore) setOrders([]);
+                console.warn("Invalid response format:", response.data);
+            }
+        } catch (err) {
+            console.error("Error fetching orders:", err);
+            setError("Failed to load orders. Please try again.");
+            toast.error("Failed to load orders");
+        } finally {
+            setIsLoading(false);
+            setLoadingMore(false);
         }
-    ];
+    }, []);
 
-    // Load sample orders directly without API
+    // Initial load of orders
     useEffect(() => {
         window.scrollTo(0, 0);
+        fetchOrders();
+    }, [fetchOrders]);
 
-        // Simulate API loading delay
-        const timer = setTimeout(() => {
-            setOrders(sampleOrders);
-            setIsLoading(false);
-        }, 1000);
+    // Load more orders when limit changes
+    useEffect(() => {
+        if (limit > 10) {
+            fetchOrders(limit, true);
+        }
+    }, [limit, fetchOrders]);
 
-        return () => clearTimeout(timer);
-    }, []);
+    const handleLoadMore = () => {
+        setLimit(prevLimit => prevLimit + 10);
+    };
 
     const handleViewDetails = (orderId) => {
         const order = orders.find(order => order.id === orderId);
-        setSelectedOrderId(orderId);
-        setSelectedOrder(order);
-        setShowDetails(true);
+        if (order) {
+            console.log("Selected order for details:", order);
+            console.log("Order items:", order.orderItems);
+            setSelectedOrderId(orderId);
+            setSelectedOrder(order);
+            setShowDetails(true);
+        } else {
+            toast.error("Order details not found");
+        }
     };
 
     const handleBackToOrders = () => {
         setShowDetails(false);
     };
 
-    if (isLoading) {
+    const handleGoogleLogin = () => {
+        window.location.href = '/signin?provider=google';
+    };
+
+    const handleFacebookLogin = () => {
+        window.location.href = '/signin?provider=facebook';
+    };
+
+    const handleEmailLogin = () => {
+        window.location.href = '/signin?provider=email';
+    };
+
+    const handleRegister = () => {
+        window.location.href = '/register';
+    };
+
+    const handleContinueAsGuest = () => {
+        navigate('/menu');
+    };
+
+    if (isLoading && !loadingMore) {
         return (
             <div className="pt-20 flex justify-center items-center min-h-[60vh]">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F7A313]"></div>
             </div>
+        );
+    }
+
+    if (!isLoggedIn) {
+        return (
+            <section className="pt-16 lg:pt-12 flex justify-center">
+                <div className="max-w-7xl w-full mt-10 lg:mt-0 px-5 lg:px-2 flex flex-col items-center text-center py-10">
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                        className="bg-white p-8 rounded-lg shadow-lg shadow-[#FEF3E0] max-w-md w-full"
+                    >
+                        <div className="mb-6 flex justify-center">
+                            <div className="w-20 h-20 bg-[#FEF3E0] rounded-full flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-[#F7A313]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <h2 className="text-xl font-medium mb-3">Please log in to view your orders</h2>
+                        <p className="text-gray-600 mb-6">Sign in to access your order history and track your previous purchases.</p>
+
+                        <div className="space-y-3 mb-6">
+                            <motion.button
+                                onClick={handleGoogleLogin}
+                                className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 py-3 rounded-lg transition-colors"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                <FaGoogle className="text-red-500" />
+                                <span>Continue with Google</span>
+                            </motion.button>
+
+                            <motion.button
+                                onClick={handleFacebookLogin}
+                                className="w-full flex items-center justify-center gap-3 bg-[#1877F2] hover:bg-[#166FE5] text-white py-3 rounded-lg transition-colors"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                <FaFacebook />
+                                <span>Continue with Facebook</span>
+                            </motion.button>
+
+                            <motion.button
+                                onClick={handleEmailLogin}
+                                className="w-full flex items-center justify-center gap-3 bg-gray-800 hover:bg-black text-white py-3 rounded-lg transition-colors"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                <FiMail />
+                                <span>Continue with Email</span>
+                            </motion.button>
+                        </div>
+
+                        <div className="text-center">
+                            <div className="flex items-center justify-center gap-2 mb-4">
+                                <div className="h-px bg-gray-300 flex-1"></div>
+                                <span className="text-gray-500 text-sm">OR</span>
+                                <div className="h-px bg-gray-300 flex-1"></div>
+                            </div>
+
+                            <p className="text-gray-600 mb-4">Don't have an account?</p>
+
+                            <div className="space-y-3">
+                                <motion.button
+                                    onClick={handleRegister}
+                                    className="w-full px-4 py-3 bg-[#F7A313] hover:bg-amber-400 text-white rounded-lg transition-colors"
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                >
+                                    Create an Account
+                                </motion.button>
+
+                                <motion.button
+                                    onClick={handleContinueAsGuest}
+                                    className="w-full px-4 py-3 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-lg transition-colors"
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                >
+                                    Continue as Guest
+                                </motion.button>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            </section>
         );
     }
 
@@ -168,8 +256,27 @@ function Order() {
                             <h6 className="text-gray-600">Check out what you've ordered before and reorder your favorites!</h6>
                         </div>
 
-                        {orders.length > 0 ? (
-                            <Orders orders={orders} onViewDetails={handleViewDetails} />
+                        {error ? (
+                            <div className="text-center py-10 text-red-500">{error}</div>
+                        ) : orders.length > 0 ? (
+                            <>
+                                <Orders orders={orders} onViewDetails={handleViewDetails} />
+
+                                {loadingMore ? (
+                                    <div className="flex justify-center mt-6 py-4">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#F7A313]"></div>
+                                    </div>
+                                ) : hasMore && (
+                                    <div className="flex justify-center mt-6 mb-10">
+                                        <button
+                                            onClick={handleLoadMore}
+                                            className="bg-white text-[#F7A313] border border-[#F7A313] hover:bg-[#FEF3E0] px-6 py-2 rounded-full transition-colors"
+                                        >
+                                            Load More
+                                        </button>
+                                    </div>
+                                )}
+                            </>
                         ) : (
                             <motion.div
                                 className="text-center py-10 min-h-[40vh] flex flex-col items-center justify-center"
