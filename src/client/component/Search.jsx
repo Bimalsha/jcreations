@@ -1,13 +1,16 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { IoMdClose } from 'react-icons/io'
-import { FiSearch, FiFilter } from 'react-icons/fi'
-import ProductItem from "./utils/Productitem.jsx"
-import api from "../../utils/axios.js"
-import toast from 'react-hot-toast'
+// src/client/component/Search.jsx
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { IoMdClose } from 'react-icons/io';
+import { FiSearch, FiFilter } from 'react-icons/fi';
+import api from "../../utils/axios.js";
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import SearchItem from "./utils/Searchitem.jsx";
 
 function Search({ isOpen, onClose }) {
-    // Search inputs
+    const navigate = useNavigate();
+    // Search state
     const [searchQuery, setSearchQuery] = useState('');
     const [recentSearches, setRecentSearches] = useState(() => {
         const saved = localStorage.getItem('jcreations_recent_searches');
@@ -18,192 +21,212 @@ function Search({ isOpen, onClose }) {
     const [showFilters, setShowFilters] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [loadingMore, setLoadingMore] = useState(false);
 
     // Filter states
-    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [categoryId, setCategoryId] = useState('');
     const [priceRange, setPriceRange] = useState([0, 10000]);
-    const [selectedOffers, setSelectedOffers] = useState([]);
-    const [sortOption, setSortOption] = useState('relevance');
+    const [status, setStatus] = useState('');
+    const [categories, setCategories] = useState([]);
+    const [products, setProducts] = useState([]);
+    const [searchLimit, setSearchLimit] = useState(20);
+    const [hasMore, setHasMore] = useState(false);
 
-    // Search data
-    const [categories, setCategories] = useState(['all']);
-    const [searchResults, setSearchResults] = useState([]);
-    const [limit] = useState(20);
+    // Store current search params for pagination
+    const searchParamsRef = useRef({
+        query: '',
+        categoryId: '',
+        priceRange: [0, 10000],
+        status: ''
+    });
 
-    // Refs for search optimization
-    const searchCache = useRef(new Map());
+    // Reference to track if component is mounted
+    const isMounted = useRef(true);
     const abortControllerRef = useRef(null);
-    const paramsStringRef = useRef('');
-    const isMounted = useRef(false);
 
-    const offerTypes = ['Free delivery', 'On sale', 'New arrivals', 'Bestsellers'];
+    // Format product data to ensure consistency
+    const formatProductData = useCallback((product) => {
+        if (!product) return null;
 
-    // Set mounted state
-    useEffect(() => {
-        isMounted.current = true;
-        return () => {
-            isMounted.current = false;
-            // Cancel any pending requests on unmount
-            if (abortControllerRef.current) {
-                abortControllerRef.current.abort();
-            }
+        return {
+            ...product,
+            // Ensure images is always an array
+            images: Array.isArray(product.images) ? product.images :
+                (product.images ? [product.images] : []),
+            // Format price as a number
+            price: typeof product.price === 'string' ? parseFloat(product.price) :
+                (product.price || 0), // Default to 0 if undefined
+            // Ensure discount_percentage exists and is a number
+            discount_percentage: parseFloat(product.discount_percentage || 0),
+            // Ensure status is a string
+            status: product.status || "out_of_stock"
         };
     }, []);
 
-    // Core search function - optimized with useCallback to prevent recreating on every render
-    const fetchProducts = useCallback(async (forceRefresh = false) => {
-        if (!isOpen || loading) return;
+    // Reset mounted ref when component unmounts
+    useEffect(() => {
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
 
-        // Cancel any ongoing requests
+    // Load categories for filter options
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await api.get('/categories');
+                if (response.data && Array.isArray(response.data)) {
+                    setCategories(response.data);
+                }
+            } catch (err) {
+                console.error("Error fetching categories:", err);
+            }
+        };
+
+        if (isOpen) {
+            fetchCategories();
+        }
+    }, [isOpen]);
+
+    // Search function
+    const searchProducts = useCallback(async (isLoadingMore = false) => {
+        if (!isOpen) return;
+
+        // Cancel previous request if it exists
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
         }
 
-        // Create a new abort controller
+        // Create new abort controller
         abortControllerRef.current = new AbortController();
 
-        // Build search params
-        const queryParams = new URLSearchParams();
-
-        if (searchQuery.trim()) {
-            queryParams.append('query', searchQuery.trim());
-        }
-
-        if (selectedCategory !== 'all') {
-            queryParams.append('category', selectedCategory);
-        }
-
-        queryParams.append('min_price', priceRange[0]);
-        queryParams.append('max_price', priceRange[1]);
-
-        if (selectedOffers.includes('On sale')) {
-            queryParams.append('discount', 'true');
-        }
-
-        // Sorting
-        if (sortOption !== 'relevance') {
-            const [sortField, sortOrder] = sortOption.split('_');
-            queryParams.append('sort', sortField);
-            queryParams.append('order', sortOrder || 'asc');
-        }
-
-        queryParams.append('limit', limit.toString());
-
-        const paramsString = queryParams.toString();
-        paramsStringRef.current = paramsString;
-
-        // Return cached results if available and not forcing refresh
-        if (!forceRefresh && searchCache.current.has(paramsString)) {
-            console.log("Using cached results for:", paramsString);
-            setSearchResults(searchCache.current.get(paramsString));
-            return;
-        }
-
-        // Save search query to recents if needed
-        if (searchQuery.trim() && !recentSearches.includes(searchQuery)) {
-            const updatedSearches = [searchQuery, ...recentSearches.slice(0, 4)];
-            setRecentSearches(updatedSearches);
-            localStorage.setItem('jcreations_recent_searches', JSON.stringify(updatedSearches));
-        }
-
-        // Execute search
-        try {
+        if (isLoadingMore) {
+            setLoadingMore(true);
+        } else {
             setLoading(true);
-            setError(null);
+        }
+        setError(null);
 
-            console.log(`Searching with: ${paramsString}`);
+        try {
+            // Build query using the correct format from API spec
+            const queryParams = {};
+            if (searchQuery.trim()) queryParams.q = searchQuery.trim();
+            if (categoryId) queryParams.category_id = categoryId;
+            if (priceRange[0] > 0) queryParams.min_price = priceRange[0];
+            if (priceRange[1] < 10000) queryParams.max_price = priceRange[1];
+            if (status) queryParams.status = status;
 
-            const response = await api.get(`/products/search`, {
-                params: Object.fromEntries(queryParams),
+            // Save current search params for pagination
+            searchParamsRef.current = {
+                query: searchQuery.trim(),
+                categoryId,
+                priceRange: [...priceRange],
+                status
+            };
+
+            // Note: limit is a path parameter not a query parameter
+            const endpoint = `/products/search/${searchLimit}`;
+
+            console.log("Search endpoint:", endpoint);
+            console.log("Search parameters:", queryParams);
+            console.log("Using limit:", searchLimit);
+
+            // Save recent search
+            if (searchQuery.trim() && !recentSearches.includes(searchQuery.trim())) {
+                const updatedSearches = [searchQuery.trim(), ...recentSearches.slice(0, 4)];
+                setRecentSearches(updatedSearches);
+                localStorage.setItem('jcreations_recent_searches', JSON.stringify(updatedSearches));
+            }
+
+            // Make the API request matching the API specification
+            const response = await api.get(endpoint, {
+                params: queryParams,
                 signal: abortControllerRef.current.signal
             });
 
-            if (!isMounted.current) return;
+            console.log("API response:", response);
 
-            // Process results - ensure unique items
-            if (response?.data) {
-                let products = [];
+            if (isMounted.current) {
+                // The API returns an array of products
+                if (response.data && Array.isArray(response.data)) {
+                    // Format each product to ensure consistent data structure
+                    const formattedProducts = response.data.map(formatProductData).filter(Boolean);
 
-                if (Array.isArray(response.data)) {
-                    const uniqueIds = new Set();
-
-                    products = response.data.filter(product => {
-                        if (!product.id || uniqueIds.has(product.id)) return false;
-                        uniqueIds.add(product.id);
-                        return true;
-                    });
-
-                    console.log(`Received ${products.length} unique results from ${response.data.length} total`);
-                }
-
-                // Only update if this is still the latest search
-                if (paramsStringRef.current === paramsString) {
-                    // Cache the results
-                    searchCache.current.set(paramsString, products);
-
-                    // Limit cache size to 10 searches
-                    if (searchCache.current.size > 10) {
-                        const oldestKey = searchCache.current.keys().next().value;
-                        searchCache.current.delete(oldestKey);
+                    if (isLoadingMore) {
+                        // Append new products to existing list
+                        setProducts(prev => [...prev, ...formattedProducts]);
+                    } else {
+                        // Replace products with new results
+                        setProducts(formattedProducts);
                     }
 
-                    setSearchResults(products);
+                    // Check if we received the maximum number of items, indicating there might be more
+                    setHasMore(formattedProducts.length >= 20);
+                } else {
+                    console.error('Invalid response format:', response.data);
+                    if (!isLoadingMore) {
+                        setProducts([]);
+                    }
+                    setHasMore(false);
+                    setError("Invalid response format from server");
                 }
             }
         } catch (err) {
-            if (!isMounted.current || err.name === 'AbortError') return;
-
-            console.error("Error fetching products:", err);
-            setError("Failed to load products. Please try again.");
-            toast.error("Search failed. Please check your connection.");
+            if (err.name !== 'AbortError' && isMounted.current) {
+                console.error("Search error:", err);
+                console.error("Error details:", err.response?.data || err.message);
+                setError("Failed to search products. Please try again.");
+                toast.error("Search failed. Please check your connection.");
+                if (!isLoadingMore) {
+                    setProducts([]);
+                }
+                setHasMore(false);
+            }
         } finally {
-            if (isMounted.current && paramsStringRef.current === paramsString) {
+            if (isMounted.current) {
                 setLoading(false);
+                setLoadingMore(false);
             }
         }
-    }, [isOpen, searchQuery, selectedCategory, priceRange, selectedOffers, sortOption, limit, recentSearches]);
+    }, [isOpen, searchQuery, categoryId, priceRange, status, searchLimit, recentSearches, formatProductData]);
 
-    // Load categories once
+    // Handle load more button click
+    const handleLoadMore = useCallback(() => {
+        console.log("Loading more items, increasing limit from", searchLimit);
+        setSearchLimit(prevLimit => prevLimit + 20);
+    }, [searchLimit]);
+
+    // Watch for changes to searchLimit to load more items
     useEffect(() => {
-        if (isOpen && categories.length <= 1) {
-            const loadCategories = async () => {
-                try {
-                    const response = await api.get('/categories');
+        if (!isOpen || loading) return;
 
-                    if (isMounted.current && response?.data) {
-                        const uniqueCategories = new Set(['all']);
-
-                        if (Array.isArray(response.data)) {
-                            response.data.forEach(cat => {
-                                const name = cat.name || cat.category_name || cat;
-                                if (name && typeof name === 'string') {
-                                    uniqueCategories.add(name);
-                                }
-                            });
-                        }
-
-                        setCategories(Array.from(uniqueCategories));
-                    }
-                } catch (err) {
-                    console.error("Error loading categories:", err);
-                    // Don't block search functionality if categories fail
-                }
-            };
-
-            loadCategories();
+        // If this isn't the initial render (limit > 20) and we're not already loading
+        if (searchLimit > 20 && !loadingMore) {
+            console.log("SearchLimit changed to", searchLimit, "- loading more items");
+            searchProducts(true);
         }
-    }, [isOpen, categories.length]);
+    }, [searchLimit, isOpen, loading, loadingMore, searchProducts]);
 
-    // Debounced search on criteria changes
+    // Search when search parameters change (with debounce)
     useEffect(() => {
         if (!isOpen) return;
 
+        // Reset to initial limit when search params change
+        if (searchLimit > 20 &&
+            (searchParamsRef.current.query !== searchQuery.trim() ||
+                searchParamsRef.current.categoryId !== categoryId ||
+                searchParamsRef.current.status !== status ||
+                searchParamsRef.current.priceRange[0] !== priceRange[0] ||
+                searchParamsRef.current.priceRange[1] !== priceRange[1])) {
+            setSearchLimit(20);
+        }
+
         const timer = setTimeout(() => {
-            fetchProducts();
+            searchProducts(false);
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [fetchProducts, isOpen]);
+    }, [searchProducts, isOpen, searchQuery, categoryId, status, priceRange]);
 
     // Focus search input when opened
     useEffect(() => {
@@ -215,15 +238,13 @@ function Search({ isOpen, onClose }) {
         }
     }, [isOpen]);
 
-    // Handler functions
-    const toggleOffer = (offer) => {
-        setSelectedOffers(prev =>
-            prev.includes(offer)
-                ? prev.filter(item => item !== offer)
-                : [...prev, offer]
-        );
+    // Handle form submission
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        searchProducts(false);
     };
 
+    // Handle price range changes
     const handlePriceChange = (e, index) => {
         const value = parseInt(e.target.value) || 0;
         setPriceRange(prev => {
@@ -241,66 +262,59 @@ function Search({ isOpen, onClose }) {
         });
     };
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        fetchProducts(true);
-    };
-
+    // Handle recent search click
     const handleRecentSearchClick = (search) => {
         setSearchQuery(search);
-        // Use a small timeout to ensure state updates before search
-        setTimeout(() => fetchProducts(true), 10);
     };
 
     return (
         <AnimatePresence>
             {isOpen && (
                 <motion.div
-                    className="fixed inset-0 bg-white z-50 flex justify-center"
+                    className="fixed inset-0 bg-white z-50 flex justify-center overflow-auto"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
                 >
-                    {/* Component UI remains the same as your current implementation */}
                     <div className="max-w-7xl w-full flex flex-col">
                         {/* Header */}
-                        <div className="flex justify-between items-center p-5 border-b">
-                            <h2 className="text-xl font-medium">Search</h2>
+                        <div className="flex justify-between items-center p-5 border-b sticky top-0 bg-white z-10">
+                            <h2 className="text-xl font-medium">Search Products</h2>
                             <motion.button
                                 onClick={onClose}
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.95 }}
                                 className="p-2 rounded-full hover:bg-gray-100"
-                                whileHover={{ rotate: 90 }}
-                                transition={{ duration: 0.2 }}
                             >
-                                <IoMdClose size={24} />
+                                <IoMdClose className="text-xl" />
                             </motion.button>
                         </div>
 
                         {/* Search and filters section */}
-                        <div className="p-5 border-b">
+                        <div className="p-5 border-b sticky top-16 bg-white z-10">
                             {/* Search input form */}
-                            <form onSubmit={handleSearch}>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                                        <FiSearch className="text-gray-400" size={20} />
-                                    </div>
+                            <form onSubmit={handleSubmit} className="flex items-center gap-2 mb-4">
+                                <div className="relative flex-1">
+                                    <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                                     <input
                                         id="search-input"
                                         type="text"
-                                        className="w-full bg-gray-100 rounded-full py-3 pl-10 pr-14 focus:outline-none focus:ring-2 focus:ring-[#F7A313]"
-                                        placeholder="Search products..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder="Search for products..."
+                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
                                     />
-                                    <button
-                                        type="button"
-                                        className="absolute inset-y-0 right-3 flex items-center"
-                                        onClick={() => setShowFilters(!showFilters)}
-                                    >
-                                        <FiFilter className={`${showFilters ? 'text-[#F7A313]' : 'text-gray-400'}`} size={20} />
-                                    </button>
                                 </div>
+                                <motion.button
+                                    type="button"
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className={`p-2 rounded-full ${showFilters ? 'bg-[#F7A313] text-white' : 'bg-gray-100 text-gray-700'}`}
+                                >
+                                    <FiFilter className="text-xl" />
+                                </motion.button>
                             </form>
 
                             {/* Filter panel */}
@@ -310,9 +324,91 @@ function Search({ isOpen, onClose }) {
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: 'auto', opacity: 1 }}
                                         exit={{ height: 0, opacity: 0 }}
-                                        className="overflow-hidden mt-4"
+                                        transition={{ duration: 0.3 }}
+                                        className="overflow-hidden"
                                     >
-                                        {/* Your existing filter content */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 pb-4">
+                                            {/* Category filter */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                                                <select
+                                                    value={categoryId}
+                                                    onChange={(e) => setCategoryId(e.target.value)}
+                                                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
+                                                >
+                                                    <option value="">All Categories</option>
+                                                    {categories.map(category => (
+                                                        <option key={category.id} value={category.id}>
+                                                            {category.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            {/* Status filter */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Availability</label>
+                                                <select
+                                                    value={status}
+                                                    onChange={(e) => setStatus(e.target.value)}
+                                                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
+                                                >
+                                                    <option value="">All Products</option>
+                                                    <option value="in_stock">In Stock</option>
+                                                    <option value="out_of_stock">Out of Stock</option>
+                                                </select>
+                                            </div>
+
+                                            {/* Price range filter */}
+                                            <div className="md:col-span-2">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Price Range: Rs.{priceRange[0]} - Rs.{priceRange[1]}
+                                                </label>
+                                                <div className="flex items-center gap-4">
+                                                    <input
+                                                        type="number"
+                                                        value={priceRange[0]}
+                                                        onChange={(e) => handlePriceChange(e, 0)}
+                                                        placeholder="Min"
+                                                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
+                                                    />
+                                                    <span>to</span>
+                                                    <input
+                                                        type="number"
+                                                        value={priceRange[1]}
+                                                        onChange={(e) => handlePriceChange(e, 1)}
+                                                        placeholder="Max"
+                                                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Filter buttons */}
+                                        <div className="flex justify-end gap-2 border-t pt-3">
+                                            <motion.button
+                                                type="button"
+                                                onClick={() => {
+                                                    setCategoryId('');
+                                                    setPriceRange([0, 10000]);
+                                                    setStatus('');
+                                                }}
+                                                whileHover={{ scale: 1.03 }}
+                                                whileTap={{ scale: 0.97 }}
+                                                className="px-4 py-1.5 border border-gray-300 rounded-full text-sm"
+                                            >
+                                                Reset Filters
+                                            </motion.button>
+                                            <motion.button
+                                                type="button"
+                                                onClick={() => searchProducts(false)}
+                                                whileHover={{ scale: 1.03 }}
+                                                whileTap={{ scale: 0.97 }}
+                                                className="px-4 py-1.5 bg-[#F7A313] text-white rounded-full text-sm"
+                                            >
+                                                Apply Filters
+                                            </motion.button>
+                                        </div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -320,88 +416,70 @@ function Search({ isOpen, onClose }) {
 
                         {/* Results section */}
                         <div className="flex-1 overflow-auto p-5">
-                            {/* Recent searches section */}
-                            {!searchQuery && !showFilters && searchResults.length === 0 && !loading && (
-                                <div>
-                                    <h3 className="text-sm font-medium text-gray-700 mb-3">Recent Searches</h3>
-                                    <div className="space-y-3">
+                            {/* Recent searches */}
+                            {!searchQuery && recentSearches.length > 0 && (
+                                <div className="mb-6">
+                                    <h3 className="text-sm font-medium text-gray-500 mb-2">Recent Searches</h3>
+                                    <div className="flex flex-wrap gap-2">
                                         {recentSearches.map((search, index) => (
-                                            <motion.div
+                                            <motion.button
                                                 key={index}
-                                                className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer"
-                                                whileHover={{ x: 5 }}
                                                 onClick={() => handleRecentSearchClick(search)}
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
+                                                className="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-gray-200"
                                             >
-                                                <FiSearch className="text-gray-400 mr-3" size={16} />
-                                                <span>{search}</span>
-                                            </motion.div>
+                                                {search}
+                                            </motion.button>
                                         ))}
                                     </div>
                                 </div>
                             )}
 
-                            {/* Search results section */}
-                            {(searchQuery || showFilters || searchResults.length > 0 || loading) && (
+                            {/* Search results */}
+                            {loading ? (
+                                <div className="flex justify-center items-center py-20">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F7A313]"></div>
+                                </div>
+                            ) : error ? (
+                                <div className="text-center py-10 text-red-500">{error}</div>
+                            ) : products.length > 0 ? (
                                 <div>
-                                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
-                                        <p className="text-sm text-gray-500">
-                                            {loading ? 'Searching...' :
-                                                `${searchResults.length} ${searchResults.length === 1 ? 'result' : 'results'}`}
-                                            {searchQuery ? ` for "${searchQuery}"` : ''}
-                                            {selectedCategory !== 'all' && ` in ${selectedCategory}`}
-                                            {selectedOffers.length > 0 && ` with special offers`}
-                                        </p>
-                                        <div className="flex items-center text-sm">
-                                            <span className="mr-2">Sort by:</span>
-                                            <select
-                                                className="border-none bg-gray-100 rounded-md px-2 py-1 text-sm"
-                                                value={sortOption}
-                                                onChange={(e) => setSortOption(e.target.value)}
-                                            >
-                                                <option value="relevance">Relevance</option>
-                                                <option value="price_asc">Price: Low to High</option>
-                                                <option value="price_desc">Price: High to Low</option>
-                                                <option value="newest">Newest First</option>
-                                            </select>
-                                        </div>
+                                    <h3 className="text-sm font-medium text-gray-500 mb-4">{products.length} Results Found</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {products.map((product, index) => (
+                                            <div key={product.id || `product-${index}`} className="product-item">
+                                                <SearchItem product={product} />
+                                            </div>
+                                        ))}
                                     </div>
 
-                                    {/* Results display */}
-                                    {loading ? (
-                                        <div className="flex justify-center items-center py-12">
-                                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F7A313]"></div>
+                                    {loadingMore ? (
+                                        <div className="flex justify-center mt-6">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#F7A313]"></div>
                                         </div>
-                                    ) : error ? (
-                                        <div className="py-8 text-center">
-                                            <div className="mx-auto w-16 h-16 mb-4 flex items-center justify-center bg-red-100 rounded-full">
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                            </div>
-                                            <h3 className="text-gray-700 font-medium">Error loading products</h3>
-                                            <p className="text-sm text-gray-500 mt-1">{error}</p>
-                                            <button
-                                                className="mt-4 px-4 py-2 bg-[#F7A313] text-white rounded-md text-sm"
-                                                onClick={() => fetchProducts(true)}
+                                    ) : hasMore && (
+                                        <div className="flex justify-center mt-6">
+                                            <motion.button
+                                                onClick={handleLoadMore}
+                                                whileHover={{ scale: 1.03 }}
+                                                whileTap={{ scale: 0.97 }}
+                                                className="px-6 py-2 border border-[#F7A313] text-[#F7A313] rounded-full hover:bg-[#FEF3E0]"
                                             >
-                                                Try Again
-                                            </button>
-                                        </div>
-                                    ) : searchResults.length > 0 ? (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
-                                            {searchResults.map(product => (
-                                                <ProductItem key={product.id} product={product} />
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="py-8 text-center">
-                                            <div className="mx-auto w-16 h-16 mb-4 flex items-center justify-center bg-gray-100 rounded-full">
-                                                <FiSearch className="text-gray-400" size={24} />
-                                            </div>
-                                            <h3 className="text-gray-700 font-medium">No products found</h3>
-                                            <p className="text-sm text-gray-500 mt-1">Try adjusting your search or filter criteria</p>
+                                                Load More
+                                            </motion.button>
                                         </div>
                                     )}
+                                </div>
+                            ) : searchQuery || categoryId || priceRange[0] > 0 || priceRange[1] < 10000 || status ? (
+                                <div className="text-center py-10">
+                                    <div className="text-gray-400 mb-2 text-xl">No results found</div>
+                                    <p className="text-gray-500">Try different keywords or filters</p>
+                                </div>
+                            ) : (
+                                <div className="text-center py-10">
+                                    <div className="text-gray-400 mb-2 text-xl">Search for products</div>
+                                    <p className="text-gray-500">Enter keywords above to find products</p>
                                 </div>
                             )}
                         </div>
@@ -412,4 +490,4 @@ function Search({ isOpen, onClose }) {
     );
 }
 
-export default Search
+export default Search;

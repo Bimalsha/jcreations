@@ -16,8 +16,11 @@ function SingleProduct() {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [direction, setDirection] = useState(0); // For slide direction
 
-    // Log the ID for debugging
-    console.log("Product ID from URL:", id);
+    useEffect(() => {
+        // Scroll to top when cart page loads
+        window.scrollTo(0, 0);
+    }, []);
+
 
     useEffect(() => {
         const fetchProduct = async () => {
