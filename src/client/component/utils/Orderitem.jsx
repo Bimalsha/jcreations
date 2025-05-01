@@ -1,9 +1,45 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import '../../../index.css';
 import { motion } from 'framer-motion';
 import { FaArrowRightLong } from "react-icons/fa6";
+import api from "../../../utils/axios.js";
 
 function Orderitem({ order, onViewDetails }) {
+    const [productImage, setProductImage] = useState('/food-placeholder.png');
+    
+    useEffect(() => {
+        // Try to fetch product image if we have order items
+        const fetchProductImage = async () => {
+            if (order?.orderItems && order.orderItems.length > 0) {
+                // If the orderItems already has an image property, use it
+                if (order.orderItems[0].image) {
+                    setProductImage(`${import.meta.env.VITE_STORAGE_URL}/${order.orderItems[0].image}`);
+                    return;
+                }
+                
+                // Otherwise try to fetch product by name
+                try {
+                    // Using search API to find product by name
+                    const response = await api.get('/products/search/1', {
+                        data: { q: order.orderItems[0].product_name },
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                        const product = response.data[0];
+                        if (product.images && product.images.length > 0) {
+                            setProductImage(`${import.meta.env.VITE_STORAGE_URL}/${product.images[0]}`);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error fetching product image:", error);
+                }
+            }
+        };
+        
+        fetchProductImage();
+    }, [order]);
+
     // Format date
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
@@ -46,11 +82,6 @@ function Orderitem({ order, onViewDetails }) {
         ? order.orderItems[0].product_name
         : "Order Item";
 
-    // Get first item image from order
-    const firstItemImage = order?.orderItems && order.orderItems.length > 0 && order.orderItems[0].image
-        ? `https://jcreations.1000dtechnology.com/storage/${order.orderItems[0].image}`
-        : "/food-placeholder.png";
-
     // Get number of additional items
     const additionalItems = order?.orderItems?.length > 1
         ? order.orderItems.length - 1
@@ -72,7 +103,7 @@ function Orderitem({ order, onViewDetails }) {
                         transition={{duration: 0.2}}
                     >
                         <img
-                            src={firstItemImage}
+                            src={productImage}
                             alt={firstItemName}
                             className="h-full w-full object-cover"
                             onError={(e) => {e.target.src = '/food-placeholder.png'}}

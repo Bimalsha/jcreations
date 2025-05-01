@@ -48,9 +48,9 @@ function Order() {
             // Validate and normalize order data
             if (response.data && Array.isArray(response.data)) {
                 const normalizedOrders = response.data.map(order => {
-                    // Map orderItems to the format expected by OrderDetails component
-                    const mappedOrderItems = Array.isArray(order.orderItems)
-                        ? order.orderItems.map(item => ({
+                    // Map order_items to the format expected by OrderDetails component
+                    const mappedOrderItems = Array.isArray(order.order_items)
+                        ? order.order_items.map(item => ({
                             id: item.id,
                             order_id: item.order_id,
                             product_name: item.product_name || "Unknown Product",
@@ -61,10 +61,11 @@ function Order() {
                         : [];
 
                     console.log("Mapped order items:", mappedOrderItems);
+                    
 
                     return {
                         ...order,
-                        orderItems: mappedOrderItems,
+                        orderItems: mappedOrderItems, // Store as orderItems for component compatibility
                         total_amount: parseFloat(order.total_amount) || 0,
                         shipping_charge: parseFloat(order.shipping_charge) || 0
                     };

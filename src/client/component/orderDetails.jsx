@@ -1,7 +1,7 @@
-// src/client/component/orderDetails.jsx
 import '../../index.css';
 import React, { useState, useEffect } from "react";
 import { motion } from 'framer-motion';
+import api from "../../utils/axios.js";
 
 function OrderDetails({ orderId, order }) {
     const [orderItems, setOrderItems] = useState([]);
@@ -163,8 +163,12 @@ function OrderDetails({ orderId, order }) {
     );
 }
 
-// Include the ItemOrdered component directly to ensure it's available
+// Updated ItemOrdered component with proper image loading
 function ItemOrdered({ item }) {
+    // Add state for product image and loading state
+    const [productImage, setProductImage] = useState('/food-placeholder.png');
+    const [isLoading, setIsLoading] = useState(true);
+    
     // Handle potential missing data with defaults
     const {
         product_name = "Product Name",
@@ -173,22 +177,70 @@ function ItemOrdered({ item }) {
         subtotal = 0,
         image = null
     } = item || {};
-
-    // Format the image URL
-    const imageUrl = image ? `${import.meta.env.VITE_STORAGE_URL}/${image}` : "/orderimo.webp";
-
+    
+    // Fetch product image when component mounts
+    useEffect(() => {
+        const fetchProductImage = async () => {
+            // If item already has an image, use it
+            if (image) {
+                setProductImage(`${import.meta.env.VITE_STORAGE_URL}/${image}`);
+                setIsLoading(false);
+                return;
+            }
+            
+            // Otherwise, try to fetch the product by name
+            try {
+                setIsLoading(true);
+                
+                // Use axios request config directly to ensure proper parameters
+                const response = await api({
+                    method: 'get',
+                    url: '/products/search/1',
+                    params: { q: product_name }
+                });
+                
+                console.log(`Search result for "${product_name}":`, response.data);
+                
+                if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                    const product = response.data[0];
+                    if (product.images && product.images.length > 0) {
+                        const imageUrl = `${import.meta.env.VITE_STORAGE_URL}/${product.images[0]}`;
+                        console.log(`Setting image URL: ${imageUrl}`);
+                        setProductImage(imageUrl);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching product image:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        fetchProductImage();
+    }, [product_name, image]);
+    
     return (
         <motion.div
             className="flex flex-col sm:flex-row items-center bg-gray-50 rounded-lg p-3 gap-3"
             whileHover={{ scale: 1.01 }}
             transition={{ duration: 0.2 }}
         >
-            <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
+            <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-md overflow-hidden bg-gray-100 flex-shrink-0 relative">
+                {isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-4 h-4 border-2 border-t-[#F7A313] border-r-transparent rounded-full animate-spin"></div>
+                    </div>
+                )}
                 <img
-                    src={imageUrl}
+                    src={productImage}
                     alt={product_name}
                     className="h-full w-full object-cover"
-                    onError={(e) => {e.target.src = '/food-placeholder.png'}}
+                    onError={(e) => {
+                        console.log("Image failed to load:", e.target.src);
+                        e.target.src = '/food-placeholder.png';
+                        setIsLoading(false);
+                    }}
+                    onLoad={() => setIsLoading(false)}
                 />
             </div>
 
