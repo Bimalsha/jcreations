@@ -56,12 +56,16 @@ function Order() {
                             product_name: item.product_name || "Unknown Product",
                             quantity: parseInt(item.quantity) || 1,
                             price: parseFloat(item.unit_price) || 0,
-                            subtotal: parseFloat(item.total_price) || 0
+                            subtotal: parseFloat(item.total_price) || 0,
+                            product_id: item.product_id,
+                            // Extract image from the product if available
+                            image: item.product?.images?.[0],
+                            // Include the entire product object
+                            product: item.product
                         }))
                         : [];
 
-                    console.log("Mapped order items:", mappedOrderItems);
-                    
+                    console.log("Mapped order items with product data:", mappedOrderItems);
 
                     return {
                         ...order,
