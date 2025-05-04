@@ -31,7 +31,7 @@ const CartItem = ({ item, onRemove, onIncreaseQuantity, onDecreaseQuantity, isRe
           <img
               src={item.image}
               alt={item.name}
-              className="h-14 w-14 sm:h-16 sm:w-16 object-cover rounded-md"
+              className="h-28 w-28  object-cover rounded-md"
           />
 
           {/* Right: Product Details and Bottom Controls */}
