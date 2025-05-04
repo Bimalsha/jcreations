@@ -103,8 +103,8 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
                 key={product.id}
                 className="bg-white rounded-2xl border-2 border-[#F0F0F0] overflow-hidden flex cursor-pointer"
                 whileHover={{
-                  scale: 1.02,
-                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
+                  scale: 1.01,
+                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.05)",
                 }}
                 transition={{ duration: 0.3 }}
                 onClick={() => handleProductClick(product.id)}
@@ -127,7 +127,7 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
                 {/* Show Out of Stock tag when product is unavailable */}
                 {product.status !== "in_stock" && (
                     <motion.div
-                        className="absolute top-0 left-0 bg-gray-500 text-white py-1 px-6 rounded-br-2xl text-sm w-full text-center font-semibold"
+                        className="absolute top-0 left-0 z-50 bg-gray-500 text-white py-1 px-6 rounded-br-2xl text-sm w-full text-center font-semibold"
                         whileHover={{
                           backgroundColor: "#3a3a3a",
                           y: [0, -2, 0],
@@ -142,8 +142,7 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
                   <motion.img
                       src={`${import.meta.env.VITE_STORAGE_URL}/${product.images[0]}`}
                       alt={product.name}
-                      className={`lg:w-[130px] lg:h-[130px] w-[90px] h-[90px] object-cover rounded-2xl ${product.status !== "in_stock" ? 'opacity-70' : ''}`}
-                      whileHover={{ scale: product.status === "in_stock" ? 1.1 : 1 }}
+                      className={`lg:w-full lg:h-[175px] w-full h-full object-cover rounded-2xl p-1 ${product.status !== "in_stock" ? 'opacity-70' : ''}`}           
                       transition={{ type: "spring", stiffness: 300 }}
                   />
                 </div>

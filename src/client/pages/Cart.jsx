@@ -531,7 +531,7 @@ function Cart() {
                                 </svg>
                             </button>
                             <div className="mb-4 md:mb-6 mt-2 md:mt-4">
-                                <img src="public/carticons/Good Idea Icon.png" className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-3 md:mb-4" alt="Idea Icon" />
+                                <img src="./carticons/Good Idea Icon.png" className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-3 md:mb-4" alt="Idea Icon" />
                             </div>
                             <div className="flex flex-col gap-3">
                                 <button

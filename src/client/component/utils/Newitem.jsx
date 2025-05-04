@@ -22,7 +22,7 @@ function Newitem({ product }) {
 
     return (
         <motion.div
-            className="bg-white shadow-lg rounded-3xl cursor-pointer hover:shadow-xl transition-shadow"
+            className="bg-white border-gray-200 border rounded-xl cursor-pointer hover:shadow-xl transition-shadow"
             whileHover={{
                 scale: 1.03,
                 transition: { duration: 0.3 }
@@ -33,23 +33,22 @@ function Newitem({ product }) {
                 <motion.img
                     src={`${import.meta.env.VITE_STORAGE_URL}/${product.images[0]}`}
                     alt={product.name}
-                    className="h-[200px] w-[200px] object-cover rounded-3xl"
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.2 }}
+                    className="h-[200px] w-full object-cover rounded-t-xl p-1 "
+                    
                 />
                 {product.discount_percentage > 0 && (
                     <motion.span
-                        className="absolute top-4 right-0 bg-[#F7A313] text-white px-4 py-1 text-sm rounded-tl-2xl"
+                        className="absolute top-4 right-0 bg-[#F7A313] text-white px-4 py-1 text-sm rounded-2xl"
                         whileHover={{
                             backgroundColor: "#e69200",
                             scale: 1.05
                         }}
                     >
-                        {Math.round(product.discount_percentage)}% OFF
+                        {Math.round(product.discount_percentage)}% OFF   
                     </motion.span>
                 )}
             </div>
-            <div className="px-4 pb-3">
+            <div className="px-4 pb-3 pt-1">
                 <motion.h3
                     className="font-medium text-[#000F20] hover:text-[#F7A313]"
                     whileHover={{ scale: 1.01 }}
@@ -59,7 +58,7 @@ function Newitem({ product }) {
                 <p className="text-[#B7B3B3] text-[10px] mt-1 text-justify">
                     {truncateDescription(product.description, 50)}
                 </p>
-                <div className="flex gap-3 items-center my-2">
+                <div className="flex gap-3 items-center my-1">
                     <motion.span
                         className="text-xl font-semibold text-[#F7A313]"
                         whileHover={{ scale: 1.05 }}

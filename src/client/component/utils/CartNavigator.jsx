@@ -3,7 +3,7 @@ import React from "react";
 const CartNavigator = ({ currentStep }) => {
   const steps = [
     { id: 1, label: "Cart", icon: "/bottomicon/cart.svg" },
-    { id: 2, label: "Checkout", icon: "public/carticons/Secure Payment Protection (1).png" },
+    { id: 2, label: "Checkout", icon: "/carticons/Secure Payment Protection (1).png" },
     { id: 3, label: "Order", icon: "/bottomicon/order.svg" },
   ];
 
