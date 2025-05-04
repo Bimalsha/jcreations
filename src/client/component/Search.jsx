@@ -67,6 +67,9 @@ function Search({ isOpen, onClose }) {
     useEffect(() => {
         return () => {
             isMounted.current = false;
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
         };
     }, []);
 
@@ -151,6 +154,7 @@ function Search({ isOpen, onClose }) {
                 if (response.data && Array.isArray(response.data)) {
                     // Format each product to ensure consistent data structure
                     const formattedProducts = response.data.map(formatProductData).filter(Boolean);
+                    console.log("Formatted products:", formattedProducts);
 
                     if (isLoadingMore) {
                         // Append new products to existing list
@@ -334,7 +338,7 @@ function Search({ isOpen, onClose }) {
                                                 <select
                                                     value={categoryId}
                                                     onChange={(e) => setCategoryId(e.target.value)}
-                                                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
+                                                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
                                                 >
                                                     <option value="">All Categories</option>
                                                     {categories.map(category => (
@@ -351,7 +355,7 @@ function Search({ isOpen, onClose }) {
                                                 <select
                                                     value={status}
                                                     onChange={(e) => setStatus(e.target.value)}
-                                                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
+                                                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
                                                 >
                                                     <option value="">All Products</option>
                                                     <option value="in_stock">In Stock</option>
@@ -370,15 +374,19 @@ function Search({ isOpen, onClose }) {
                                                         value={priceRange[0]}
                                                         onChange={(e) => handlePriceChange(e, 0)}
                                                         placeholder="Min"
-                                                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
+                                                        min="0"
+                                                        max="10000"
+                                                        className="w-1/2 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
                                                     />
-                                                    <span>to</span>
+                                                    <span className="text-gray-500">to</span>
                                                     <input
                                                         type="number"
                                                         value={priceRange[1]}
                                                         onChange={(e) => handlePriceChange(e, 1)}
                                                         placeholder="Max"
-                                                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
+                                                        min="0"
+                                                        max="10000"
+                                                        className="w-1/2 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
                                                     />
                                                 </div>
                                             </div>
@@ -437,7 +445,7 @@ function Search({ isOpen, onClose }) {
                             )}
 
                             {/* Search results */}
-                            {loading ? (
+                            {loading && !loadingMore ? (
                                 <div className="flex justify-center items-center py-20">
                                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F7A313]"></div>
                                 </div>
@@ -446,12 +454,15 @@ function Search({ isOpen, onClose }) {
                             ) : products.length > 0 ? (
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-500 mb-4">{products.length} Results Found</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {products.map((product, index) => (
-                                            <div key={product.id || `product-${index}`} className="product-item">
-                                                <SearchItem product={product} />
-                                            </div>
-                                        ))}
+                                    <div className="grid grid-cols-1 gap-4">
+                                        {products.map((product, index) => {
+                                            console.log(`Rendering product ${index}:`, product);
+                                            return (
+                                                <div key={product.id || `product-${index}`} className="w-full">
+                                                    <SearchItem product={product} />
+                                                </div>
+                                            );
+                                        })}
                                     </div>
 
                                     {loadingMore ? (
@@ -471,7 +482,7 @@ function Search({ isOpen, onClose }) {
                                         </div>
                                     )}
                                 </div>
-                            ) : searchQuery || categoryId || priceRange[0] > 0 || priceRange[1] < 10000 || status ? (
+                            ) : (searchQuery || categoryId || priceRange[0] > 0 || priceRange[1] < 10000 || status) ? (
                                 <div className="text-center py-10">
                                     <div className="text-gray-400 mb-2 text-xl">No results found</div>
                                     <p className="text-gray-500">Try different keywords or filters</p>
