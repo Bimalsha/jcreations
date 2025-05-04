@@ -4,30 +4,42 @@ import { motion } from "framer-motion"
 
 function Allproducts() {
     const [isLoading, setIsLoading] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
+    const [hasMoreItems, setHasMoreItems] = useState(true);
     const productItemRef = useRef(null);
 
-    const handleSeeMore = () => {
-        if (productItemRef.current) {
-            productItemRef.current.loadMoreProducts();
-        }
-    };
-
-    // Check if there are more products to load
     useEffect(() => {
+        // Check immediately when component mounts
         const checkHasMore = () => {
             if (productItemRef.current) {
-                setHasMore(productItemRef.current.hasMore);
+                console.log("Ref current:", productItemRef.current);
+                console.log("Has more:", productItemRef.current.hasMore);
+                setHasMoreItems(productItemRef.current.hasMore);
             }
         };
 
-        // Check on mount and whenever loading state changes
-        checkHasMore();
+        // First immediate check
+        const timer = setTimeout(checkHasMore, 100);
 
-        // Setup an interval to check hasMore regularly
-        const interval = setInterval(checkHasMore, 500);
-        return () => clearInterval(interval);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Use another effect to check when loading changes
+    useEffect(() => {
+        if (productItemRef.current) {
+            console.log("Loading changed, checking hasMore");
+            setHasMoreItems(productItemRef.current.hasMore);
+        }
     }, [isLoading]);
+
+    // Function to handle "See More" button click
+    const handleSeeMore = () => {
+        console.log("See More clicked");
+        if (productItemRef.current && productItemRef.current.loadMore) {
+            productItemRef.current.loadMore();
+        }
+    };
+
+    console.log("Rendering Allproducts. isLoading:", isLoading, "hasMoreItems:", hasMoreItems);
 
     return (
         <>
@@ -45,27 +57,25 @@ function Allproducts() {
                             />
                         </div>
 
-                        {hasMore && (
-                            <div className={'w-full flex justify-center mt-6'}>
-                                <motion.button
-                                    className={'bg-[#F7A313] py-2 rounded-full px-8 text-white flex items-center gap-2 disabled:opacity-70'}
-                                    onClick={handleSeeMore}
-                                    disabled={isLoading}
-                                    whileHover={{ scale: 1.05, backgroundColor: "#e69200" }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
-                                    {isLoading ? (
-                                        <>
-                                            <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            Loading...
-                                        </>
-                                    ) : "See More"}
-                                </motion.button>
-                            </div>
-                        )}
+                        {/* See More Button */}
+                        <div className="flex justify-center mt-6 mb-8">
+                            {/* Use regular button for 1-2 renders for testing */}
+                            <motion.button
+                                onClick={handleSeeMore}
+                                className="px-6 py-2 bg-[#F7A313] text-white rounded-full font-medium cursor-pointer"
+                                whileHover={{
+                                    scale: 1.05,
+                                    backgroundColor: "#e69200"
+                                }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                See More
+                            </motion.button>
+
+                            {isLoading && (
+                                <div className="ml-4 animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#F7A313]"></div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </section>

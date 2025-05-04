@@ -9,75 +9,66 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20); // Start with 20 items
   const [hasMore, setHasMore] = useState(true);
-  const limit = 10;
+  const [totalCount, setTotalCount] = useState(0);
 
-  const fetchProducts = async (pageNum = 1, append = false) => {
+  const fetchProducts = async () => {
     try {
       setLoading(true);
       if (onLoadingChange) onLoadingChange(true);
 
-      // Calculate offset based on page number
-      const offset = (pageNum - 1) * limit;
-      console.log(`Fetching products with offset ${offset}, limit ${limit}`);
+      // First get total count of products
+      const countResponse = await api.get('/products/count');
+      const count = countResponse.data.count || 0;
+      setTotalCount(count);
 
-      // Modified API call to use proper pagination parameters
-      const response = await api.get(`/products/${limit}`, {
-        params: { page: pageNum, offset: offset },
-      });
+      console.log(`Total products: ${count}, Current limit: ${limit}`);
 
+      // Fetch products with current limit
+      const response = await api.get(`/products/${limit}`);
       const newProducts = response.data;
-      console.log(`Received ${newProducts.length} products from API`);
+      console.log(`Loaded ${newProducts.length} products`);
 
-      // Update hasMore if fewer products are returned than the limit
-      if (newProducts.length < limit) {
-        setHasMore(false);
-      } else {
-        setHasMore(true);
-      }
+      setProducts(newProducts);
 
-      // If we're appending, make sure to filter out any potential duplicates
-      if (append) {
-        const existingIds = new Set(products.map(product => product.id));
-        const uniqueNewProducts = newProducts.filter(product => !existingIds.has(product.id));
+      // FIXED: Compare the current loaded products count with total count
+      const moreAvailable = newProducts.length < count;
+      console.log(`More products available: ${moreAvailable}`);
+      setHasMore(moreAvailable);
 
-        if (uniqueNewProducts.length === 0) {
-          console.log("No new unique products received");
-          setHasMore(false);
-        } else {
-          setProducts(prev => [...prev, ...uniqueNewProducts]);
-        }
-      } else {
-        setProducts(newProducts);
-      }
     } catch (err) {
       console.error("Error fetching products:", err);
-      setError(err.response?.data?.message || err.message);
+      setError(err.response?.data?.message || "Failed to load products");
     } finally {
       setLoading(false);
       if (onLoadingChange) onLoadingChange(false);
     }
   };
 
+  // Load initial products and when limit changes
   useEffect(() => {
-    // Initial load of first 10 products
-    fetchProducts(1, false);
-  }, []);
+    fetchProducts();
+  }, [limit]);
 
-  const loadMoreProducts = () => {
-    const nextPage = page + 1;
-    console.log(`Loading more products, page ${nextPage}`);
-    setPage(nextPage);
-    fetchProducts(nextPage, true);
-  };
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    loadMore: () => {
+      console.log("loadMore called, current limit:", limit);
+      if (!loading) {
+        setLimit(prevLimit => prevLimit + 20);
+      }
+    },
+    hasMore: hasMore,
+    totalCount: totalCount,
+    loadedCount: products.length
+  }), [hasMore, loading, limit, products.length, totalCount]);
 
   const handleProductClick = (productId) => {
     navigate(`/singleproduct/${productId}`);
   };
 
   const handleAddToCart = async (productId, e) => {
-    // Prevent navigation when clicking the cart button
     if (e) e.stopPropagation();
 
     try {
@@ -98,19 +89,9 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
       toast.success("Add to cart successfully");
     } catch (err) {
       console.error("Error adding to cart:", err);
-      if (err.response && err.response.status === 422) {
-        toast.error(err.response.data.message || "Validation error");
-      } else {
-        toast.error("Failed to add item to cart");
-      }
+      toast.error(err.response?.data?.message || "Failed to add item to cart");
     }
   };
-
-  // Expose methods to parent component
-  useImperativeHandle(ref, () => ({
-    loadMoreProducts,
-    hasMore
-  }));
 
   if (loading && products.length === 0) return <div className="col-span-2 text-center">Loading products...</div>;
   if (error) return <div className="col-span-2 text-center">Error: {error}</div>;
@@ -128,9 +109,9 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
                 transition={{ duration: 0.3 }}
                 onClick={() => handleProductClick(product.id)}
             >
-              {/* Left Side: Image and Discount */}
               <div className="relative w-1/3">
-                {product.discount_percentage > 0 && (
+                {/* Only show discount tag for in-stock products with discounts */}
+                {product.discount_percentage > 0 && product.status === "in_stock" && (
                     <motion.div
                         className="absolute top-0 left-0 bg-[#F7A313] text-white py-1 px-6 rounded-br-2xl text-sm w-full text-center font-semibold"
                         whileHover={{
@@ -142,18 +123,32 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
                       {product.discount_percentage}% OFF
                     </motion.div>
                 )}
-                <div className={"w-full h-full flex justify-center items-center"}>
+
+                {/* Show Out of Stock tag when product is unavailable */}
+                {product.status !== "in_stock" && (
+                    <motion.div
+                        className="absolute top-0 left-0 bg-gray-500 text-white py-1 px-6 rounded-br-2xl text-sm w-full text-center font-semibold"
+                        whileHover={{
+                          backgroundColor: "#3a3a3a",
+                          y: [0, -2, 0],
+                        }}
+                        transition={{ duration: 0.5 }}
+                    >
+                      Out of Stock
+                    </motion.div>
+                )}
+
+                <div className="w-full h-full flex justify-center items-center">
                   <motion.img
-                      src={`https://jcreations.1000dtechnology.com/storage/${product.images[0]}`}
+                      src={`${import.meta.env.VITE_STORAGE_URL}/${product.images[0]}`}
                       alt={product.name}
-                      className="lg:w-[130px] lg:h-[130px] w-[90px] h-[90px] object-cover rounded-2xl"
-                      whileHover={{ scale: 1.1 }}
+                      className={`lg:w-[130px] lg:h-[130px] w-[90px] h-[90px] object-cover rounded-2xl ${product.status !== "in_stock" ? 'opacity-70' : ''}`}
+                      whileHover={{ scale: product.status === "in_stock" ? 1.1 : 1 }}
                       transition={{ type: "spring", stiffness: 300 }}
                   />
                 </div>
               </div>
 
-              {/* Right Side: Description and Price */}
               <div className="p-4 w-2/3">
                 <motion.h2
                     className="lg:text-xl font-semibold text-gray-800 mb-2"
@@ -162,9 +157,24 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
                 >
                   {product.name}
                 </motion.h2>
-                <p className="text-[#A5A0A0] text-sm mb-4 text-[10px]">
-                  {product.description}
+                <p className="text-[#A5A0A0] text-sm mb-2 text-[10px]">
+                  {product.description && (product.description.length > 100 ? product.description.slice(0, 100) + "..." : product.description)}
                 </p>
+
+                {/* Product Status Field */}
+                <div className="mb-2 flex items-center">
+
+                  {product.status === "in_stock" ? (
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                  In Stock
+                </span>
+                  ) : (
+                      <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full">
+                  Out of Stock
+                </span>
+                  )}
+                </div>
+
                 <div className="flex items-center justify-between">
                   <motion.div
                       className="flex items-center gap-1"
@@ -186,15 +196,17 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
                         </p>
                     )}
                   </motion.div>
+
+                  {/* Disable Add to Cart button for out-of-stock products */}
                   <motion.button
-                      className="bg-[#F7A313] hover:bg-yellow-600 text-white font-bold p-2 rounded-full"
+                      className={`${product.status === "in_stock" ? 'bg-[#F7A313] hover:bg-yellow-600' : 'bg-gray-400 cursor-not-allowed'} text-white font-bold p-2 rounded-full`}
                       whileHover={{
-                        scale: 1.1,
-                        backgroundColor: "#e69200",
+                        scale: product.status === "in_stock" ? 1.1 : 1,
+                        backgroundColor: product.status === "in_stock" ? "#e69200" : undefined,
                       }}
-                      whileTap={{ scale: 0.95 }}
+                      whileTap={{ scale: product.status === "in_stock" ? 0.95 : 1 }}
                       transition={{ duration: 0.2 }}
-                      onClick={(e) => handleAddToCart(product.id, e)}
+                      onClick={(e) => product.status === "in_stock" && handleAddToCart(product.id, e)}
                   >
                     <img
                         src="/bottomicon/cart.svg"
@@ -206,9 +218,7 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
               </div>
             </motion.div>
         ))}
-        {loading && products.length > 0 && (
-            <div className="col-span-2 text-center">Loading more products...</div>
-        )}
+        {loading && <div className="col-span-2 text-center mt-4">Loading more products...</div>}
       </>
   );
 });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaBoxOpen, FaSearch, FaCalendarAlt } from 'react-icons/fa';
 import { AiOutlineReload } from "react-icons/ai";
-import { BsThreeDots } from 'react-icons/bs';
+import { BsThreeDots, BsChevronLeft, BsChevronRight } from 'react-icons/bs';
 import OrderDetailsModal from './utils/OrderDetailsModal.jsx';
 import useAuthStore from '../../stores/authStore';
 import api from "../../utils/axios.js";
@@ -348,91 +348,57 @@ const Orders = () => {
                                 <table className="w-full bg-white rounded-lg shadow-sm text-sm text-left table-fixed">
                                     <thead className="bg-white sticky top-0 z-10 shadow-sm">
                                     <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[8%]">OrderID</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[15%]">Name</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[15%]">Contact</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[15%]">Address</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[10%]">Date</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[10%]">Total</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[10%]">Payment</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[10%]">Status</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[7%]">Actions</th>
+                                        <th className="px-4 py-3 w-20">ID</th>
+                                        <th className="px-4 py-3">Customer</th>
+                                        <th className="px-4 py-3">Date</th>
+                                        <th className="px-4 py-3">Total</th>
+                                        <th className="px-4 py-3">Status</th>
+                                        <th className="px-4 py-3 w-20">Actions</th>
                                     </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                    {currentItems.map((order) => (
+                                    {currentItems.map(order => (
                                         <tr
                                             key={order.id}
                                             className="hover:bg-gray-50 cursor-pointer"
+                                            onClick={() => handleRowClick(order.id)}
                                         >
-                                            <td className="px-4 py-3 truncate" onClick={() => handleRowClick(order.id)}>{order.id}</td>
-                                            <td className="px-4 py-3 truncate" onClick={() => handleRowClick(order.id)}>{order.customer?.name || order.customer_name || 'Unknown'}</td>
-                                            <td className="px-4 py-3 truncate" onClick={() => handleRowClick(order.id)}>{order.customer?.phone || order.contact_number || 'N/A'}</td>
-                                            <td className="px-4 py-3 truncate" onClick={() => handleRowClick(order.id)}>{order.shipping_address || order.address || 'N/A'}</td>
-                                            <td className="px-4 py-3 truncate" onClick={() => handleRowClick(order.id)}>{formatDateTime(order.created_at)}</td>
-                                            <td className="px-4 py-3 truncate font-medium" onClick={() => handleRowClick(order.id)}>
-                                                LKR {parseFloat(order.total_amount || 0).toFixed(2)}
-                                            </td>
-                                            <td className="px-4 py-3" onClick={() => handleRowClick(order.id)}>
-                                                <span
-                                                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                                        order.payment_type === 'cod' || order.payment_type === 'cash_on_delivery'
-                                                            ? 'bg-amber-100 text-amber-800'
-                                                            : 'bg-green-100 text-green-800'
-                                                    }`}
-                                                >
-                                                    {order.payment_type === 'cod' || order.payment_type === 'cash_on_delivery'
-                                                        ? 'COD'
-                                                        : order.payment_type === 'card_payment'
-                                                            ? 'Card'
-                                                            : 'Online'}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                            <td className="px-4 py-3 font-medium">{order.id}</td>
+                                            <td className="px-4 py-3">{order.customer_name || 'Guest'}</td>
+                                            <td className="px-4 py-3">{formatDateTime(order.created_at)}</td>
+                                            <td className="px-4 py-3">${parseFloat(order.total_amount || 0).toFixed(2)}</td>
+                                            <td className="px-4 py-3">
                                                 {updatingStatus === order.id ? (
-                                                    <div className="w-24 h-6 flex items-center justify-center">
-                                                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-amber-500"></div>
-                                                    </div>
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                        Updating...
+                                                    </span>
                                                 ) : (
                                                     <select
                                                         value={order.status || 'pending'}
-                                                        onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                                                        className={`px-2 py-1 rounded-md text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-amber-500 ${statusClasses[order.status] || 'bg-gray-100 text-gray-700'}`}
+                                                        onChange={(e) => {
+                                                            e.stopPropagation();
+                                                            updateOrderStatus(order.id, e.target.value);
+                                                        }}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className={`text-xs rounded-full px-2.5 py-1 font-medium border-0 focus:ring-0 cursor-pointer ${statusClasses[order.status] || 'bg-gray-100 text-gray-800'}`}
                                                     >
-                                                        {statusOptions.map(option => {
-                                                            // Define status workflow order
-                                                            const statusOrder = {
-                                                                'pending': 0,
-                                                                'in_progress': 1,
-                                                                'delivered': 2,
-                                                                'returned': 3
-                                                            };
-
-                                                            // Disable if option is the current status or comes before it
-                                                            const currentStatusOrder = statusOrder[order.status || 'pending'];
-                                                            const optionStatusOrder = statusOrder[option.value];
-                                                            const shouldDisable = optionStatusOrder <= currentStatusOrder;
-
-                                                            return (
-                                                                <option
-                                                                    key={option.value}
-                                                                    value={option.value}
-                                                                    disabled={shouldDisable}
-                                                                >
-                                                                    {option.label}
-                                                                </option>
-                                                            );
-                                                        })}
+                                                        {statusOptions.map(option => (
+                                                            <option key={option.value} value={option.value}>
+                                                                {option.label}
+                                                            </option>
+                                                        ))}
                                                     </select>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                            <td className="px-4 py-3 text-center">
                                                 <button
-                                                    onClick={() => handleRowClick(order.id)}
-                                                    className="w-full h-full flex justify-center items-center cursor-pointer"
-                                                    aria-label={`View details of order #${order.id}`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleRowClick(order.id);
+                                                    }}
+                                                    className="text-gray-400 hover:text-gray-600"
                                                 >
-                                                    <BsThreeDots className="text-blue-400 text-lg hover:text-blue-600"/>
+                                                    <BsThreeDots size={20} />
                                                 </button>
                                             </td>
                                         </tr>
@@ -441,48 +407,60 @@ const Orders = () => {
                                 </table>
                             </div>
 
-                            {/* Pagination controls */}
-                            {totalPages > 1 && (
-                                <div className="flex justify-center mt-6">
-                                    <nav className="flex items-center">
+                            {/* Pagination Controls */}
+                            {!isLoading && !error && filteredOrders.length > 0 && (
+                                <div className="flex justify-between items-center mt-4 px-2">
+                                    <div className="text-sm text-gray-500">
+                                        Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredOrders.length)} of {filteredOrders.length} orders
+                                    </div>
+                                    <div className="flex gap-2 items-center">
                                         <button
-                                            onClick={() => paginate(Math.max(1, currentPage - 1))}
+                                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                                             disabled={currentPage === 1}
-                                            className="px-3 py-1 rounded-md mr-2 bg-gray-100 text-gray-700 disabled:opacity-50"
+                                            className="p-2 rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            Previous
+                                            <BsChevronLeft size={16} />
                                         </button>
 
-                                        <div className="flex space-x-1">
-                                            {[...Array(totalPages).keys()].map(number => (
+                                        {/* Page Numbers */}
+                                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                            // Show pages around current page
+                                            let pageNum;
+                                            if (totalPages <= 5) {
+                                                pageNum = i + 1;
+                                            } else if (currentPage <= 3) {
+                                                pageNum = i + 1;
+                                            } else if (currentPage >= totalPages - 2) {
+                                                pageNum = totalPages - 4 + i;
+                                            } else {
+                                                pageNum = currentPage - 2 + i;
+                                            }
+
+                                            return (
                                                 <button
-                                                    key={number + 1}
-                                                    onClick={() => paginate(number + 1)}
-                                                    className={`px-3 py-1 rounded-md ${
-                                                        currentPage === number + 1
-                                                            ? 'bg-amber-500 text-white'
-                                                            : 'bg-gray-100 text-gray-700'
+                                                    key={pageNum}
+                                                    onClick={() => paginate(pageNum)}
+                                                    className={`w-8 h-8 rounded ${
+                                                        currentPage === pageNum
+                                                            ? 'bg-black text-white'
+                                                            : 'border border-gray-300 hover:bg-gray-50'
                                                     }`}
                                                 >
-                                                    {number + 1}
+                                                    {pageNum}
                                                 </button>
-                                            ))}
-                                        </div>
+                                            );
+                                        })}
 
                                         <button
-                                            onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
+                                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                                             disabled={currentPage === totalPages}
-                                            className="px-3 py-1 rounded-md ml-2 bg-gray-100 text-gray-700 disabled:opacity-50"
+                                            className="p-2 rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            Next
+                                            <BsChevronRight size={16} />
                                         </button>
-                                    </nav>
+                                    </div>
                                 </div>
                             )}
-
-                            <div className="text-center text-gray-500 text-sm mt-4">
-                                Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredOrders.length)} of {filteredOrders.length} orders
-                            </div>
                         </>
                     )}
                 </div>

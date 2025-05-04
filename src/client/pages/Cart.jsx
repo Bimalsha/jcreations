@@ -168,7 +168,7 @@ function Cart() {
         };
     }, []);
 
-    // Update the handleCheckout function with Payhere SDK implementation
+    // Update the handleCheckout function to skip login dialog if user is logged in
     const handleCheckout = async () => {
         // Don't proceed if cart is empty
         if (isEmpty) {
@@ -176,12 +176,15 @@ function Cart() {
         }
 
         if (currentStep === 1) {
-            // Check if user is logged in
-            if (!isLoggedIn) {
+            // Check if user is logged in - directly check localStorage
+            const userId = localStorage.getItem('jcreations_user_uid');
+            if (!userId) {
+                // Only show login popup if no user ID exists
                 setShowLoginPopup(true);
                 return;
             }
-            // Move from cart to check out
+
+            // Move from cart to checkout immediately if user is logged in
             setCurrentStep(2);
             console.log("Proceeding to checkout with items:", cartItems);
         } else if (currentStep === 2) {
@@ -206,8 +209,8 @@ function Cart() {
                     return;
                 }
 
-                // Get firebase UID if available
-                const firebaseUid = localStorage.getItem('firebase_uid');
+                // Get Firebase UID from the correct localStorage key
+                const userId = localStorage.getItem('jcreations_user_uid');
 
                 // Prepare request body
                 const orderData = {
@@ -221,8 +224,8 @@ function Cart() {
                 };
 
                 // Add firebase_uid only if available
-                if (firebaseUid) {
-                    orderData.firebase_uid = firebaseUid;
+                if (userId) {
+                    orderData.firebase_uid = userId;
                 }
 
                 let response;
@@ -275,22 +278,24 @@ function Cart() {
                                 merchant_id: paymentData.merchant_id,
                                 return_url: window.location.origin + '/payment-success',
                                 cancel_url: window.location.origin + '/payment-cancelled',
-                                notify_url: paymentData.notify_url,
-                                order_id: paymentData.order_id,
+                                notify_url: import.meta.env.VITE_PAYHERE_NOTIFY_URL || 'https://jcreations.1000dtechnology.com/api/payhere/notify',
+                                order_id: paymentData.order_id.toString(),
                                 items: itemsDescription,
                                 amount: paymentData.amount,
                                 currency: paymentData.currency,
-                                first_name: deliveryInfo.customer_name.split(' ')[0],
-                                last_name: deliveryInfo.customer_name.split(' ').slice(1).join(' '),
-                                email: 'customer@example.com',
+                                first_name: deliveryInfo.customer_name.split(' ')[0] || "Customer",
+                                last_name: deliveryInfo.customer_name.split(' ').slice(1).join(' ') || "",
+                                email: "customer@jcreations.com",
                                 phone: deliveryInfo.contact_number,
                                 address: deliveryInfo.address,
                                 city: deliveryInfo.city,
-                                country: 'Sri Lanka',
+                                country: "Sri Lanka",
                                 delivery_address: deliveryInfo.address,
                                 delivery_city: deliveryInfo.city,
-                                delivery_country: 'Sri Lanka',
-                                custom_1: responseData.order_id
+                                delivery_country: "Sri Lanka",
+                                hash: paymentData.hash, // Include the hash from API response
+                                custom_1: localStorage.getItem('firebase_uid') || "",
+                                custom_2: localStorage.getItem('jcreations_cart_id') || ""
                             };
 
                             console.log("Payhere payment configuration:", payment);
@@ -371,7 +376,7 @@ function Cart() {
         // Redirect to login page
         console.log("Redirecting to login page");
         // Implementation would depend on your routing setup
-        // window.location.href = '/login';
+        window.location.href = '/signin';
         setShowLoginPopup(false);
     };
 
@@ -430,9 +435,9 @@ function Cart() {
 
         fetchCartData();
 
-        // Check login status
-        const firebaseUid = localStorage.getItem('firebase_uid');
-        setIsLoggedIn(!!firebaseUid);
+        // Check login status using the correct localStorage key
+        const userId = localStorage.getItem('jcreations_user_uid');
+        setIsLoggedIn(!!userId);
     }, []);
 
     return (
