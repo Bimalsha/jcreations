@@ -5,7 +5,7 @@ import CartItem from "./CartItem.jsx";
 const CartItemDemo = ({ cartItems, onRemove, onIncreaseQuantity, onDecreaseQuantity, removingItems = [] }) => {
     return (
         <div className="flex flex-col space-y-4">
-            <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
                 <h2 className="text-lg md:text-xl font-bold mb-4">Shopping Cart</h2>
 
                 <AnimatePresence>

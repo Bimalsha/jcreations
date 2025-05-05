@@ -446,8 +446,8 @@ function Cart() {
                 <CartNavigator currentStep={currentStep} />
                 {currentStep === 1 && (
                     // Original layout for cart view
-                    <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 md:gap-6 px-4 py-6 pt-28 md:p-28">
-                        <div className="w-full md:w-3/5 transition-all duration-300 ease-in-out">
+                    <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 md:gap-6 px-4 py-6 pt-28 md:p-5">
+                        <div className="w-full md:w-3/5 transition-all duration-300 ease-in-out ">
                             <CartItemDemo
                                 cartItems={cartItems}
                                 onRemove={handleRemove}
@@ -531,7 +531,7 @@ function Cart() {
                                 </svg>
                             </button>
                             <div className="mb-4 md:mb-6 mt-2 md:mt-4">
-                                <img src="public/carticons/Good Idea Icon.png" className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-3 md:mb-4" alt="Idea Icon" />
+                                <img src="./carticons/Good Idea Icon.png" className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-3 md:mb-4" alt="Idea Icon" />
                             </div>
                             <div className="flex flex-col gap-3">
                                 <button

@@ -181,10 +181,10 @@ function Categoryitem() {
                         onClick={() => handleCategoryClick(category)}
                     >
                         <motion.div
-                            className={`rounded-full flex flex-col items-center justify-center w-36 h-36 p-4 shadow-xl ${
+                            className={`rounded-full flex flex-col items-center justify-center w-36 h-36 p-4   ${
                                 selectedCategory === category.id
                                     ? "bg-[#F7A313]/20 border-2 border-[#F7A313]"
-                                    : "bg-[#FFF7E6] shadow-gray-400"
+                                    : "bg-[#FFF7E6] border-[#F7A313] border-2 shadow-gray-200"
                             }`}
                             whileHover={{
                                 boxShadow: "0px 8px 20px rgba(247, 163, 19, 0.3)",
