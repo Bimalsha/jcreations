@@ -1,8 +1,16 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
-export default function OTPInput() {
+export default function OTPInput({ onChange }) {
     const [otp, setOtp] = useState(["", "", "", ""]);
     const inputRefs = useRef([]);
+
+    // Send OTP value to parent component whenever it changes
+    useEffect(() => {
+        if (onChange) {
+            const otpString = otp.join('');
+            onChange(otpString);
+        }
+    }, [otp, onChange]);
 
     const handleChange = (index, value) => {
         if (!/^\d*$/.test(value)) return; // Only allow numbers
@@ -39,7 +47,7 @@ export default function OTPInput() {
                     value={digit}
                     onChange={(e) => handleChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
-                    className="w-12 h-12 text-center text-xl font-semibold  rounded-md focus:outline-none focus:ring-2 focus:ring-[#000F20] bg-[#F0F0F0]"
+                    className="w-12 h-12 text-center text-xl font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-[#000F20] bg-[#F0F0F0]"
                 />
             ))}
         </div>

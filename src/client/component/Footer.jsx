@@ -11,6 +11,19 @@ function Footer() {
                         <p>Copyrights &copy;{new Date().getFullYear()} JCreations.</p>
                     </div>
 
+                    {/* Middle Section - Policy Links */}
+                    <div className="flex flex-wrap justify-center gap-4 mb-4 md:mb-0">
+                        <a href="/refund-policy" className="hover:text-white transition-colors">
+                            Refund Policy
+                        </a>
+                        <a href="/privacy-policy" className="hover:text-white transition-colors">
+                            Privacy Policy
+                        </a>
+                        <a href="/terms-conditions" className="hover:text-white transition-colors">
+                            Terms and Conditions
+                        </a>
+                    </div>
+
                     {/* Right Section */}
                     <div className="text-center md:text-right">
                         <p>

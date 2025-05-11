@@ -1,9 +1,55 @@
 import '../../index.css';
-import React from "react";
-import ItemOrdered from "./utils/itemOrdered.jsx";
-import { motion } from 'motion/react'; // Fixed import path
+import React, { useState, useEffect } from "react";
+import { motion } from 'framer-motion';
+import api from "../../utils/axios.js";
 
-function OrderDetails({ orderId }) {
+function OrderDetails({ orderId, order }) {
+    const [orderItems, setOrderItems] = useState([]);
+
+    useEffect(() => {
+        console.log("Order received:", order);
+
+        if (order?.orderItems && Array.isArray(order.orderItems)) {
+            const processedItems = order.orderItems.map(item => ({
+                ...item,
+                quantity: parseInt(item.quantity) || 1,
+                price: parseFloat(item.price) || 0,
+                subtotal: parseFloat(item.subtotal) || 0,
+                product_name: item.product_name || item.name || "Product"
+            }));
+
+            console.log("Processed items:", processedItems);
+            setOrderItems(processedItems);
+        } else {
+            console.warn("No order items found or invalid format:", order?.orderItems);
+            setOrderItems([]);
+        }
+    }, [order]);
+
+    // Format date
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
+
+    // Format time
+    const formatDateTime = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
     // Container variants
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -29,6 +75,11 @@ function OrderDetails({ orderId }) {
         }
     };
 
+    // Calculate total with shipping
+    const totalWithShipping = order ? (
+        (parseFloat(order.total_amount) || 0) + (parseFloat(order.shipping_charge) || 0)
+    ).toFixed(2) : '0.00';
+
     return (
         <motion.div
             className="w-full p-4 sm:p-6 md:p-8 bg-white rounded-lg shadow-sm"
@@ -37,28 +88,41 @@ function OrderDetails({ orderId }) {
             animate="visible"
         >
             <motion.div variants={itemVariants} className="mb-4 sm:mb-6">
-                <span className="text-xl sm:text-2xl font-semibold block">Order details #{orderId || "123456"}</span>
-                <h6 className="text-sm sm:text-base text-gray-600">Date: March 28, 2025</h6>
+                <span className="text-xl sm:text-2xl font-semibold block">Order details #{orderId || (order?.id || "123456")}</span>
+                <h6 className="text-sm sm:text-base text-gray-600">Date: {order ? formatDate(order.order_datetime) : "March 28, 2025"}</h6>
             </motion.div>
 
             <motion.div variants={itemVariants} className="mb-4 sm:mb-6">
                 <span className="text-lg sm:text-xl font-semibold block mb-2">Delivery Information</span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2">
-                    <h6 className="text-sm sm:text-base text-gray-700">Name: Sahan Kavinda</h6>
-                    <h6 className="text-sm sm:text-base text-gray-700">Contact: 0777 1232121</h6>
-                    <h6 className="text-sm sm:text-base text-gray-700">Address: No57, Colombo</h6>
-                    <h6 className="text-sm sm:text-base text-gray-700">Date & Time for Delivery: March 30, 2025</h6>
+                    <h6 className="text-sm sm:text-base text-gray-700">Name: {order?.customer_name || "Customer"}</h6>
+                    <h6 className="text-sm sm:text-base text-gray-700">Contact: {order?.contact_number || "N/A"}</h6>
+                    <h6 className="text-sm sm:text-base text-gray-700">Address: {order?.address || "N/A"}</h6>
+                    <h6 className="text-sm sm:text-base text-gray-700">Date & Time for Delivery: {order ? formatDateTime(order.req_datetime) : "N/A"}</h6>
                 </div>
             </motion.div>
 
             <motion.div variants={itemVariants} className="mb-4 sm:mb-6">
                 <span className="text-lg sm:text-xl font-semibold block mb-2">Payment Method</span>
-                <h6 className="text-sm sm:text-base text-gray-700">Cash On Delivery</h6>
+                <h6 className="text-sm sm:text-base text-gray-700">{order?.payment_type ?
+                    order.payment_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) :
+                    "Cash On Delivery"}</h6>
+                <h6 className="text-sm sm:text-base text-gray-700">Status: {order?.payment_status ?
+                    order.payment_status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) :
+                    "Pending"}</h6>
             </motion.div>
 
             <motion.div variants={itemVariants} className="mb-4 sm:mb-6">
                 <span className="text-lg sm:text-xl font-semibold block mb-2">Item Ordered</span>
-                <ItemOrdered/>
+                <div className="space-y-3">
+                    {orderItems && orderItems.length > 0 ? (
+                        orderItems.map((item, index) => (
+                            <ItemOrdered key={index} item={item} />
+                        ))
+                    ) : (
+                        <div className="text-center py-4 text-gray-500">No items found in this order</div>
+                    )}
+                </div>
             </motion.div>
 
             <motion.div
@@ -72,11 +136,11 @@ function OrderDetails({ orderId }) {
                 >
                     <div className="flex justify-between text-sm sm:text-base mb-2">
                         <span className="text-gray-600">Total Amount</span>
-                        <span className="font-medium">LKR.7000.00</span>
+                        <span className="font-medium">LKR.{parseFloat(order?.total_amount || 0).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm sm:text-base mb-2">
                         <span className="text-gray-600">Delivery Fee</span>
-                        <span className="font-medium">LKR.400.00</span>
+                        <span className="font-medium">LKR.{parseFloat(order?.shipping_charge || 0).toFixed(2)}</span>
                     </div>
                     <motion.hr
                         className="my-2 sm:my-3"
@@ -91,10 +155,105 @@ function OrderDetails({ orderId }) {
                         transition={{ delay: 1.5, duration: 0.5 }}
                     >
                         <span>Total </span>
-                        <span className="text-amber-500">LKR.7400.00</span>
+                        <span className="text-amber-500">LKR.{totalWithShipping}</span>
                     </motion.div>
                 </motion.div>
             </motion.div>
+        </motion.div>
+    );
+}
+
+// Updated ItemOrdered component with proper image loading
+function ItemOrdered({ item }) {
+    // Add state for product image and loading state
+    const [productImage, setProductImage] = useState('/food-placeholder.png');
+    const [isLoading, setIsLoading] = useState(true);
+    
+    // Handle potential missing data with defaults
+    const {
+        product_name = "Product Name",
+        quantity = 1,
+        price = 0,
+        subtotal = 0,
+        image = null
+    } = item || {};
+    
+    // Fetch product image when component mounts
+    useEffect(() => {
+        const fetchProductImage = async () => {
+            // If item already has an image, use it
+            if (image) {
+                setProductImage(`${import.meta.env.VITE_STORAGE_URL}/${image}`);
+                setIsLoading(false);
+                return;
+            }
+            
+            // Otherwise, try to fetch the product by name
+            try {
+                setIsLoading(true);
+                
+                // Use axios request config directly to ensure proper parameters
+                const response = await api({
+                    method: 'get',
+                    url: '/products/search/1',
+                    params: { q: product_name }
+                });
+                
+                console.log(`Search result for "${product_name}":`, response.data);
+                
+                if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                    const product = response.data[0];
+                    if (product.images && product.images.length > 0) {
+                        const imageUrl = `${import.meta.env.VITE_STORAGE_URL}/${product.images[0]}`;
+                        console.log(`Setting image URL: ${imageUrl}`);
+                        setProductImage(imageUrl);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching product image:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        fetchProductImage();
+    }, [product_name, image]);
+    
+    return (
+        <motion.div
+            className="flex flex-col sm:flex-row items-center bg-gray-50 rounded-lg p-3 gap-3"
+            whileHover={{ scale: 1.01 }}
+            transition={{ duration: 0.2 }}
+        >
+            <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-md overflow-hidden bg-gray-100 flex-shrink-0 relative">
+                {isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-4 h-4 border-2 border-t-[#F7A313] border-r-transparent rounded-full animate-spin"></div>
+                    </div>
+                )}
+                <img
+                    src={productImage}
+                    alt={product_name}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                        console.log("Image failed to load:", e.target.src);
+                        e.target.src = '/food-placeholder.png';
+                        setIsLoading(false);
+                    }}
+                    onLoad={() => setIsLoading(false)}
+                />
+            </div>
+
+            <div className="flex-grow text-center sm:text-left">
+                <h3 className="font-medium line-clamp-1">{product_name}</h3>
+                <div className="text-sm text-gray-600">
+                    <span>Rs.{parseFloat(price).toFixed(2)} × {quantity}</span>
+                </div>
+            </div>
+
+            <div className="text-right font-semibold">
+                Rs.{parseFloat(subtotal).toFixed(2)}
+            </div>
         </motion.div>
     );
 }

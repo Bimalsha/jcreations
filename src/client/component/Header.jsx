@@ -24,7 +24,7 @@ function Header() {
                 <div className={'flex flex-col w-full lg:max-w-7xl '}>
                     <div className={'flex items-center justify-between'}>
                         <Link to={"/"} className="flex items-center space-x-2">
-                            <img src="../../../public/logo.png" alt="Logo" className="w-10 h-10"/>
+                            <img src="/logo.png" alt="Logo" className="w-10 h-10"/>
                             <h1 className="lg:text-xl text-sm font-bold text-[#000F20]">JCreations</h1>
                         </Link>
 
@@ -48,7 +48,7 @@ function Header() {
                             <Link to={'/cart'} className="p-2 shadow-lg shadow-[#FDEAC9] rounded-full hover:bg-[#F7A313]">
                                 <LuShoppingBag className="text-[#000F20] w-4 lg:w-full" size={20}/>
                             </Link>
-                            <Link to={'/signin'} className="p-2 shadow-lg shadow-[#FDEAC9] rounded-full hover:bg-[#F7A313]">
+                            <Link to={'/account'} className="p-2 shadow-lg shadow-[#FDEAC9] rounded-full hover:bg-[#F7A313]">
                                 <FiUser className="text-[#000F20] w-4 lg:w-full" size={20}/>
                             </Link>
                         </div>

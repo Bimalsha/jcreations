@@ -1,10 +1,12 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-const CartItem = ({ item, onRemove, onIncreaseQuantity, onDecreaseQuantity }) => {
+const CartItem = ({ item, onRemove, onIncreaseQuantity, onDecreaseQuantity, isRemoving }) => {
   return (
       <motion.div
-          className="relative flex flex-col bg-white border border-gray-300 rounded-lg p-4 mb-4"
+          className={`relative flex flex-col bg-white border border-gray-300 rounded-lg p-4 mb-4 ${
+              isRemoving ? "opacity-50 scale-95" : "opacity-100 scale-100"
+          } transition-all duration-300`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
@@ -17,7 +19,7 @@ const CartItem = ({ item, onRemove, onIncreaseQuantity, onDecreaseQuantity }) =>
             aria-label="Remove item"
         >
           <img
-              src="./public/bottomicon/remove.png"
+              src="/bottomicon/remove.png"
               alt="Remove item"
               className="h-5 w-5 sm:h-6 sm:w-6 hover:opacity-80"
           />
@@ -29,7 +31,7 @@ const CartItem = ({ item, onRemove, onIncreaseQuantity, onDecreaseQuantity }) =>
           <img
               src={item.image}
               alt={item.name}
-              className="h-14 w-14 sm:h-16 sm:w-16 object-cover rounded-md"
+              className="h-28 w-28  object-cover rounded-md"
           />
 
           {/* Right: Product Details and Bottom Controls */}
@@ -37,14 +39,32 @@ const CartItem = ({ item, onRemove, onIncreaseQuantity, onDecreaseQuantity }) =>
             {/* Product Details */}
             <div>
               <h3 className="text-sm sm:text-base font-bold text-gray-800">{item.name}</h3>
-              <p className="text-xs sm:text-sm text-gray-600">{item.quantity} x {item.price.toFixed(2)}</p>
+
+              {/* Price Display - Show discount if applicable */}
+              {item.discount_percentage > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs sm:text-sm text-gray-600">
+                      {item.quantity} x
+                    </p>
+                    <span className="">
+                    Rs.{item.effectivePrice.toFixed(2)}
+                  </span>
+                    <span className="text-gray-400 line-through text-xs">
+                    Rs.{item.price.toFixed(2)}
+                  </span>
+                  </div>
+              ) : (
+                  <p className="text-xs sm:text-sm text-gray-600">
+                    {item.quantity} x Rs.{item.price.toFixed(2)}
+                  </p>
+              )}
             </div>
 
             {/* Bottom Row: Total Price and Quantity Controls */}
             <div className="flex justify-between items-center mt-3">
               {/* Total Price */}
               <div className="text-base sm:text-lg font-semibold text-amber-500">
-                LKR.{(item.price * item.quantity).toFixed(2)}
+                LKR.{(item.effectivePrice * item.quantity).toFixed(2)}
               </div>
 
               {/* Quantity Controls */}

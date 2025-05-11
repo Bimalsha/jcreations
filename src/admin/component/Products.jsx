@@ -1,34 +1,121 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom';
 import { LuCodesandbox } from "react-icons/lu";
 import { FaRegWindowClose } from "react-icons/fa";
 import { AiOutlineReload } from "react-icons/ai";
-import { BsThreeDots, BsArrowLeft } from "react-icons/bs";
+import { BsThreeDots, BsArrowLeft, BsChevronLeft, BsChevronRight } from "react-icons/bs";
 import { FiPackage } from "react-icons/fi";
 import AddProductForm from './utils/AddProductForm .jsx';
 import UpdateProductForm from './utils/UpdateProductForm .jsx';
 import ProductPreviewModal from './utils/ProductPreviewModal.jsx';
-import toast from 'react-hot-toast';
+import toast, {Toaster} from 'react-hot-toast';
 import api from "../../utils/axios.js";
+import useAuthStore from '../../stores/authStore';
+import {IoIosInformationCircleOutline} from "react-icons/io";
 
 function Products() {
+    const navigate = useNavigate();
+    const { user } = useAuthStore();
     const [showAddForm, setShowAddForm] = useState(false);
     const [updateProduct, setUpdateProduct] = useState(null);
     const [previewProduct, setPreviewProduct] = useState(null);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [products, setProducts] = useState([]);
+    const [displayedProducts, setDisplayedProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [sortBy, setSortBy] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [updatingStatus, setUpdatingStatus] = useState(null);
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 20;
+
+    // Check admin authentication
+    useEffect(() => {
+        if (!user || !user.roles || !user.roles.includes('admin')) {
+            navigate('/adminlogin');
+        }
+    }, [user, navigate]);
 
     useEffect(() => {
         fetchProducts();
     }, []);
 
+    // Apply sorting and filtering whenever products, sortBy or searchTerm changes
+    useEffect(() => {
+        let result = [...products];
+
+        // Apply search filter
+        if (searchTerm) {
+            result = result.filter(product =>
+                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (product.category?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        // Apply sorting only if sortBy has a value
+        if (sortBy) {
+            switch(sortBy) {
+                case "name":
+                    result.sort((a, b) => a.name.localeCompare(b.name));
+                    break;
+                case "date":
+                    result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                    break;
+                case "category":
+                    result.sort((a, b) => {
+                        const catA = a.category?.name || a.category_id || '';
+                        const catB = b.category?.name || b.category_id || '';
+                        return catA.localeCompare(catB);
+                    });
+                    break;
+                case "price_low":
+                    result.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+                    break;
+                case "price_high":
+                    result.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        setDisplayedProducts(result);
+        // Reset to first page when filter/sort criteria change
+        setCurrentPage(1);
+    }, [products, sortBy, searchTerm]);
+
+    // Pagination calculations
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = displayedProducts.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(displayedProducts.length / itemsPerPage);
+
     const fetchProducts = async () => {
+        // Existing code...
         setLoading(true);
         try {
-            console.log('Fetching products from API:', import.meta.env.VITE_API_URL + '/products');
+            console.log('Fetching products from admin API');
 
-            const response = await api.get('/products');
+            // Get token from auth store
+            const token = user?.token;
+
+            let response;
+            try {
+                response = await api.get('/admin/products', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                console.log('Successfully fetched from /admin/products');
+            } catch (err) {
+                console.log('Failed to fetch from /admin/products, trying fallback to /products');
+                response = await api.get('/products');
+                console.log('Successfully fetched from /products');
+            }
 
             console.log('API Response status:', response.status);
             console.log('API Response data:', response.data);
@@ -56,10 +143,11 @@ function Products() {
 
             console.log('Processed product data:', productData);
             setProducts(productData);
+            setDisplayedProducts(productData); // Set displayed products directly
             setError(null);
 
             if (productData.length > 0) {
-                toast.success(`Loaded ${productData.length} products`);
+
             } else {
                 toast.info('No products found');
             }
@@ -80,9 +168,81 @@ function Products() {
         }
     };
 
+    // Pagination navigation functions
+    const goToPage = (pageNumber) => {
+        setCurrentPage(pageNumber);
+    };
+
+    const goToPreviousPage = () => {
+        setCurrentPage(prev => Math.max(prev - 1, 1));
+    };
+
+    const goToNextPage = () => {
+        setCurrentPage(prev => Math.min(prev + 1, totalPages));
+    };
+
+    // Rest of your existing functions...
+    const updateProductStatus = async (productId, newStatus) => {
+        setUpdatingStatus(productId);
+        try {
+            // Get token from auth store
+            const token = user?.token;
+
+            const response = await api.put(`/admin/products/${productId}`,
+                { status: newStatus },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            // Check for successful status code
+            if (response.status === 200) {
+                console.log('Status update response:', response.data);
+                toast.success(`Product status updated to ${newStatus.replace('_', ' ')}`);
+
+                // Update the local state with the new status
+                setProducts(prevProducts =>
+                    prevProducts.map(product =>
+                        product.id === productId ? {...product, status: newStatus} : product
+                    )
+                );
+            }
+        } catch (error) {
+            console.error('Error updating product status:', error);
+            const errorMessage = error.response?.data?.message || error.message;
+            toast.error(`Failed to update status: ${errorMessage}`);
+
+            if (error.response) {
+                console.log('Error response:', error.response.data);
+                console.log('Status code:', error.response.status);
+            }
+        } finally {
+            setUpdatingStatus(null);
+        }
+    };
+
     const handleAddProductClick = () => {
         setShowAddForm(true);
         setUpdateProduct(null);
+    };
+
+    const handleAddProductSuccess = (needsRefresh) => {
+        setShowAddForm(false);  // Hide the form
+
+        if (needsRefresh) {
+            fetchProducts();  // Reload the products table
+        }
+    };
+
+    const handleUpdateProductSuccess = (needsRefresh) => {
+        setUpdateProduct(false);  // Hide the form
+
+        if (needsRefresh) {
+            fetchProducts();  // Reload the products table
+        }
     };
 
     const handleUpdateProductClick = (product) => {
@@ -113,14 +273,35 @@ function Products() {
         setUpdateProduct(null);
     };
 
+    const handleSortChange = (e) => {
+        setSortBy(e.target.value);
+    };
+
+    const handleSearchChange = (e) => {
+        setSearchTerm(e.target.value);
+    };
+
+    // Status options for dropdown - updated to include all three states
+    const statusOptions = [
+        { value: 'in_stock', label: 'In Stock' },
+        { value: 'out_of_stock', label: 'Out of Stock' },
+        { value: 'deactive', label: 'Deactive' }
+    ];
+
     const statusClasses = {
         in_stock: 'bg-green-100 text-green-700',
         out_of_stock: 'bg-red-100 text-red-700',
+        deactive: 'bg-gray-100 text-gray-700',
         discontinued: 'bg-gray-100 text-gray-700'
     };
 
     return (
         <div className="flex flex-col min-h-[500px]">
+            <Toaster
+                position="top-right"
+                reverseOrder={false}
+                className="z-50"
+            />
             {!showAddForm && !updateProduct && (
                 <div className="bg-[#F2EFE7] w-full h-[200px] px-6 pt-6">
                     <div className="flex items-center justify-between px-6 pt-6 mb-6">
@@ -144,13 +325,24 @@ function Products() {
                         </div>
 
                         <div className="flex items-center gap-4 p-4 bg-white shadow-md rounded-xl w-60">
+                            <div className="p-3 bg-yellow-100 rounded-full">
+                                <IoIosInformationCircleOutline  size={20} className="text-yellow-800 text-xl"/>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500">Out of Stock </p>
+                                <p className="text-lg font-semibold">
+                                    {products.filter(p => p.status === 'out_of_stock').length}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4 p-4 bg-white shadow-md rounded-xl w-60">
                             <div className="p-3 bg-red-100 rounded-full">
                                 <FaRegWindowClose size={20} className="text-[#FF0000] text-xl"/>
                             </div>
                             <div>
                                 <p className="text-sm text-gray-500">Disabled Products</p>
                                 <p className="text-lg font-semibold">
-                                    {products.filter(p => p.status !== 'in_stock').length}
+                                    {products.filter(p => p.status === 'deactive').length}
                                 </p>
                             </div>
                         </div>
@@ -158,16 +350,17 @@ function Products() {
                 </div>
             )}
 
-            <div className={`h-full w-full ${(!showAddForm && !updateProduct) ? 'bg-white rounded-b-2xl' : 'rounded-2xl'}`}>
+            <div
+                className={`h-full w-full ${(!showAddForm && !updateProduct) ? 'bg-white rounded-b-2xl' : 'rounded-2xl'}`}>
                 {showAddForm ? (
                     <div className="w-full pt-4 px-4">
                         <button
                             onClick={handleBackToProducts}
                             className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 cursor-pointer ml-4"
                         >
-                            <BsArrowLeft /> Back to Products
+                            <BsArrowLeft/> Back to Products
                         </button>
-                        <AddProductForm />
+                        <AddProductForm onSuccess={handleAddProductSuccess}/>
                     </div>
                 ) : updateProduct ? (
                     <div className="w-full pt-4 px-4">
@@ -177,7 +370,8 @@ function Products() {
                         >
                             <BsArrowLeft /> Back to Products
                         </button>
-                        <UpdateProductForm product={updateProduct} />
+
+                        <UpdateProductForm product={updateProduct} onSuccess={handleUpdateProductSuccess} />
                     </div>
                 ) : (
                     <>
@@ -192,15 +386,24 @@ function Products() {
                                 <div>
                                     <span className="text-sm text-[#C6C6C6]">Sort By:</span>
                                     <select
-                                        className="border border-[#C6C6C6] rounded-lg p-2 ml-2 focus:outline-none focus:ring-2 focus:ring-[#F7A313]">
+                                        value={sortBy}
+                                        onChange={handleSortChange}
+                                        className="border border-[#C6C6C6] rounded-lg p-2 ml-2 focus:outline-none focus:ring-2 focus:ring-[#F7A313]"
+                                    >
+                                        <option value="">None</option>
                                         <option value="name">Name</option>
                                         <option value="date">Date</option>
+                                        <option value="category">Category</option>
+                                        <option value="price_low">Price: Low to High</option>
+                                        <option value="price_high">Price: High to Low</option>
                                     </select>
                                 </div>
                                 <div className="relative">
                                     <input
                                         type="text"
                                         placeholder="Search products..."
+                                        value={searchTerm}
+                                        onChange={handleSearchChange}
                                         className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
                                     />
                                     <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
@@ -234,8 +437,8 @@ function Products() {
                                         Try Again
                                     </button>
                                 </div>
-                            ) : products.length === 0 ? (
-                                <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+                            ) : displayedProducts.length === 0 ? (
+                                <div className="text-center py-12 rounded-lg shadow-sm">
                                     <div className="text-gray-400 mb-4">
                                         <FiPackage className="h-16 w-16 mx-auto" />
                                     </div>
@@ -249,56 +452,62 @@ function Products() {
                                     </button>
                                 </div>
                             ) : (
-                                <div className="border border-gray-200 rounded-lg shadow-sm">
-                                    {/* Table with fixed container height - only this will scroll */}
-                                    <div className="relative">
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-white sticky top-0 z-10 shadow-sm">
-                                            <tr>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">ID</th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Product Name</th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Category</th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Price</th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Discount</th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Image</th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">More</th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Update</th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
-                                            </tr>
-                                            </thead>
-                                        </table>
-                                        {/* Separate scrollable body */}
+                                <>
+                                    <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
                                         <div className="max-h-[400px] overflow-y-auto">
-                                            <table className="min-w-full divide-y divide-gray-200">
+                                            <table className="min-w-full divide-y divide-gray-200 table-fixed">
+                                                <thead className="bg-white sticky top-0 z-10 shadow-sm">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[5%]">ID</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[20%]">Product Name</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[15%]">Category</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[10%]">Price</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[10%]">Discount</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[10%]">Image</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[10%]">More</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[10%]">Update</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-[10%]">Status</th>
+                                                </tr>
+                                                </thead>
                                                 <tbody className="bg-white divide-y divide-gray-200">
-                                                {products.map((product) => (
+                                                {currentItems.map((product) => (
                                                     <tr key={product.id} className="hover:bg-gray-50">
-                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '5%'}}>{product.id}</td>
-                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '20%'}}>{product.name}</td>
-                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '15%'}}>{product.category?.name || product.category_id}</td>
-                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '10%'}}>${parseFloat(product.price).toFixed(2)}</td>
-                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '10%'}}>{product.discount_percentage || 0}%</td>
-                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '10%'}}>
+                                                        <td className="px-4 py-3 whitespace-nowrap w-[5%]">{product.id}</td>
+                                                        <td className="px-4 py-3 whitespace-nowrap w-[20%]">{product.name}</td>
+                                                        <td className="px-4 py-3 whitespace-nowrap w-[15%]">{product.category?.name || product.category_id}</td>
+                                                        <td className="px-4 py-3 whitespace-nowrap w-[10%]">Rs.{parseFloat(product.price).toFixed(2)}</td>
+                                                        <td className="px-4 py-3 whitespace-nowrap w-[10%]">{product.discount_percentage || 0}%</td>
+                                                        <td className="px-4 py-3 whitespace-nowrap w-[10%]">
                                                             <img
-                                                                src={`${import.meta.env.VITE_STORAGE_URL}/${product.images}`}
-                                                                alt={product.name}
-                                                                className="w-10 h-10 object-cover rounded"
+                                                                src={
+                                                                    product.images
+                                                                        ? Array.isArray(product.images)
+                                                                            ? `${import.meta.env.VITE_STORAGE_URL}/${product.images[0]}`
+                                                                            : typeof product.images === 'string'
+                                                                                ? `${import.meta.env.VITE_STORAGE_URL}/${product.images}`
+                                                                                : 'https://via.placeholder.com/150'
+                                                                        : 'https://via.placeholder.com/150'
+                                                                }
+                                                                alt={product.name || 'Product image'}
+                                                                className="w-10 h-10 object-cover rounded border border-gray-200"
                                                                 onError={(e) => {
-                                                                    e.target.src = '/logo.png';
+                                                                    console.log(`Failed to load image for product: ${product.id} - ${product.name}`);
+                                                                    e.target.src = 'https://via.placeholder.com/150';
                                                                     e.target.onerror = null;
                                                                 }}
                                                             />
                                                         </td>
-                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '10%'}}>
+                                                        <td className="px-4 py-3 whitespace-nowrap w-[10%]">
                                                             <button
                                                                 onClick={() => handlePreviewClick(product)}
                                                                 className="w-full h-full flex justify-center items-center cursor-pointer"
                                                                 aria-label={`View details of ${product.name}`}
                                                             >
-                                                                <BsThreeDots className="text-blue-400 text-lg hover:text-blue-600"/>
+                                                                <BsThreeDots
+                                                                    className="text-blue-400 text-lg hover:text-blue-600"/>
                                                             </button>
                                                         </td>
-                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '10%'}}>
+                                                        <td className="px-4 py-3 whitespace-nowrap w-[10%]">
                                                             <button
                                                                 onClick={() => handleUpdateProductClick(product)}
                                                                 className="w-full h-full flex justify-center items-center cursor-pointer"
@@ -307,12 +516,27 @@ function Products() {
                                                                 <AiOutlineReload className="text-yellow-500 text-lg hover:text-yellow-600"/>
                                                             </button>
                                                         </td>
-                                                        <td className="px-4 py-3 whitespace-nowrap" style={{width: '10%'}}>
-                                                                <span
-                                                                    className={`px-2 py-1 rounded-full text-xs font-medium ${statusClasses[product.status] || 'bg-gray-100 text-gray-700'}`}
+                                                        <td className="px-4 py-3 whitespace-nowrap w-[10%]">
+                                                            {updatingStatus === product.id ? (
+                                                                <div className="w-full flex justify-center">
+                                                                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-amber-500"></div>
+                                                                </div>
+                                                            ) : (
+                                                                <select
+                                                                    value={product.status || 'in_stock'}
+                                                                    onChange={(e) => updateProductStatus(product.id, e.target.value)}
+                                                                    className={`px-2 py-1 rounded-md text-xs font-medium border focus:outline-none focus:ring-2 focus:ring-amber-500 ${statusClasses[product.status] || 'bg-gray-100 text-gray-700'}`}
                                                                 >
-                                                                    {product.status?.replace('_', ' ') || 'unknown'}
-                                                                </span>
+                                                                    {statusOptions.map(option => (
+                                                                        <option
+                                                                            key={option.value}
+                                                                            value={option.value}
+                                                                        >
+                                                                            {option.label}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            )}
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -320,7 +544,61 @@ function Products() {
                                             </table>
                                         </div>
                                     </div>
-                                </div>
+
+                                    {/* Pagination Controls */}
+                                    <div className="flex justify-between items-center mt-4 px-2">
+                                        <div className="text-sm text-gray-500">
+                                            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, displayedProducts.length)} of {displayedProducts.length} products
+                                        </div>
+
+                                        <div className="flex items-center space-x-2">
+                                            <button
+                                                onClick={goToPreviousPage}
+                                                disabled={currentPage === 1}
+                                                className="p-2 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <BsChevronLeft size={16} />
+                                            </button>
+
+                                            {/* Page number buttons - show up to 5 pages */}
+                                            {[...Array(Math.min(5, totalPages))].map((_, idx) => {
+                                                // Calculate the page number to display
+                                                let pageNum;
+                                                if (totalPages <= 5) {
+                                                    pageNum = idx + 1;
+                                                } else if (currentPage <= 3) {
+                                                    pageNum = idx + 1;
+                                                } else if (currentPage >= totalPages - 2) {
+                                                    pageNum = totalPages - 4 + idx;
+                                                } else {
+                                                    pageNum = currentPage - 2 + idx;
+                                                }
+
+                                                return (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => goToPage(pageNum)}
+                                                        className={`w-8 h-8 flex items-center justify-center rounded-md ${
+                                                            currentPage === pageNum
+                                                                ? 'bg-black text-white'
+                                                                : 'border hover:bg-gray-50'
+                                                        }`}
+                                                    >
+                                                        {pageNum}
+                                                    </button>
+                                                );
+                                            })}
+
+                                            <button
+                                                onClick={goToNextPage}
+                                                disabled={currentPage === totalPages || totalPages === 0}
+                                                className="p-2 border rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <BsChevronRight size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
                             )}
                         </div>
                     </>

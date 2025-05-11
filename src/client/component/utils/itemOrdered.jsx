@@ -1,39 +1,44 @@
-import React from 'react'
-import '../../../index.css';
-import {motion} from 'framer-motion';
-import {Link} from "react-router-dom";
-import {FaArrowRightLong} from "react-icons/fa6";
+// src/client/component/utils/itemOrdered.jsx
+import React from 'react';
+import { motion } from 'framer-motion';
 
+function ItemOrdered({ item = {} }) {
+    // Default values if item is not provided
+    const {
+        product_name = "Product Name",
+        quantity = 1,
+        price = 0,
+        subtotal = 0,
+        image = "/orderimo.webp"
+    } = item;
 
-function itemOrdered() {
     return (
         <motion.div
-            className="bg-white shadow-lg rounded-3xl cursor-pointer hover:shadow-xl transition-shadow w-full"
-            whileHover={{
-                scale: 1.03,
-                transition: {duration: 0.3}
-            }}
+            className="flex flex-col sm:flex-row items-center bg-gray-50 rounded-lg p-3 gap-3"
+            whileHover={{ scale: 1.01 }}
+            transition={{ duration: 0.2 }}
         >
-            <div className="relative px-8 pt-4 pb-4 lg:flex justify-between">
-                <motion.div className="flex ">
-                    <motion.img
-                        src="../../../../public/pngtree-chocolate-cake-png-image_17407867.png"
-                        alt="Product"
-                        className="h-[80px] w-[80px] object-cover"
-                        whileHover={{scale: 1.05}}
-                        transition={{duration: 0.2}}
-                    />
-                    <motion.dev className={"px-8"}>
-                        <div className={"font-semibold"}>Chocolate Cake 1 kg  × 1</div>
-                    </motion.dev>
-                </motion.div>
-                <motion.dev className={"justify-items-end"}>
-                    <div className={"text-xl lg:text-start text-end"}>Rs.3500.00</div>
+            <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
+                <img
+                    src={image}
+                    alt={product_name}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {e.target.src = '/food-placeholder.png'}}
+                />
+            </div>
 
-                </motion.dev>
+            <div className="flex-grow text-center sm:text-left">
+                <h3 className="font-medium line-clamp-1">{product_name}</h3>
+                <div className="text-sm text-gray-600">
+                    <span>Rs.{parseFloat(price).toFixed(2)} × {quantity}</span>
+                </div>
+            </div>
+
+            <div className="text-right font-semibold">
+                Rs.{parseFloat(subtotal).toFixed(2)}
             </div>
         </motion.div>
-    )
+    );
 }
 
-export default itemOrdered
+export default ItemOrdered;
