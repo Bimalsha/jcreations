@@ -27,7 +27,7 @@ function BottomNavigator() {
         fetchCartCount();
         
         // Set up an interval to refresh the cart count periodically
-        const intervalId = setInterval(fetchCartCount, 10000); // Every 10 seconds
+        const intervalId = setInterval(fetchCartCount, 8000); // Every 10 seconds
         
         return () => clearInterval(intervalId);
     }, []);
