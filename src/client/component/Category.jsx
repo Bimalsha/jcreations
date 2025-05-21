@@ -25,7 +25,7 @@ function Category({ onCategoryClick }) {
 
 
                 {/* Fixed container for categories positioned below header */}
-                <div className="fixed left-0 right-0 top-28 z-40 bg-white py-3">
+                <div className="fixed left-0 right-0 top-0 z-40 bg-white py-3">
                     <Categoryitem onCategoryClick={onCategoryClick} />
                 </div>
             </section>

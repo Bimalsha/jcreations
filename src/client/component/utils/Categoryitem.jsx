@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from "../../../utils/axios.js";
 import { useNavigate } from 'react-router-dom';
 
@@ -28,6 +28,16 @@ function Categoryitem({ onCategoryClick }) {
 
         fetchCategories();
     }, []);
+
+    // Handle category click
+    const handleCategoryClick = (category) => {
+        setSelectedCategory(category.id);
+
+        // Call the parent component's handler if provided
+        if (onCategoryClick) {
+            onCategoryClick(category);
+        }
+    };
 
     // Get image source with fallback
     const getImageSrc = (category) => {
@@ -88,21 +98,6 @@ function Categoryitem({ onCategoryClick }) {
         scrollContainer.addEventListener("wheel", handleWheel, { passive: false });
         return () => scrollContainer.removeEventListener("wheel", handleWheel);
     }, []);
-
-    const handleCategoryClick = (category) => {
-        // Update UI to show this category as selected
-        setSelectedCategory(category.id);
-
-        // Instead of navigating to search page, we'll just pass the category
-        // to the parent component which should handle opening the search modal
-        if (onCategoryClick) {
-            onCategoryClick({
-                id: category.id,
-                name: category.name,
-                action: 'openSearch'
-            });
-        }
-    };
 
     // Loading skeleton
     if (loading) {
