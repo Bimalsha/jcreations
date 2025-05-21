@@ -1,36 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link, useLocation } from "react-router-dom";
 import { motion } from 'framer-motion';
-import api from '../../utils/axios.js';
+// Import the cart store
+import useCartStore from '../../stores/cartStore';
 
 function BottomNavigator() {
     const location = useLocation();
     const currentPath = location.pathname;
-    const [cartItemCount, setCartItemCount] = useState(0);
+    
+    // Use cart store instead of local state
+    const { itemCount, fetchCart } = useCartStore();
+    const badgeInitialized = useRef(false);
 
     // Fetch cart data to get the item count
     useEffect(() => {
-        const fetchCartCount = async () => {
-            try {
-                const cartId = localStorage.getItem('jcreations_cart_id');
-                if (cartId) {
-                    const response = await api.get(`/cart/${cartId}`);
-                    if (response.data && response.data.items) {
-                        setCartItemCount(response.data.items.length);
-                    }
-                }
-            } catch (error) {
-                console.error("Error fetching cart count:", error);
-            }
-        };
-
-        fetchCartCount();
+        // Initial fetch
+        fetchCart();
         
         // Set up an interval to refresh the cart count periodically
-        const intervalId = setInterval(fetchCartCount, 8000); // Every 10 seconds
+        const intervalId = setInterval(fetchCart, 10000); // Every 10 seconds
         
         return () => clearInterval(intervalId);
-    }, []);
+    }, [fetchCart]);
 
     return (
         <div className="fixed bottom-0 left-0 z-50 w-full h-20">
@@ -73,15 +64,26 @@ function BottomNavigator() {
                             whileTap={{ scale: 0.9 }}
                             transition={{ type: "spring", stiffness: 400, damping: 17 }}
                         />
-                        {/* Cart badge */}
-                        {cartItemCount > 0 && (
+                        {/* Cart badge - now using Zustand store */}
+                        {itemCount > 0 && (
                             <motion.div
                                 className="absolute -top-2 -right-2 bg-[#F7A313] text-black text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
-                                initial={{ scale: 0 }}
+                                initial={badgeInitialized.current ? { scale: 1 } : { scale: 0 }}
                                 animate={{ scale: 1 }}
+                                key={badgeInitialized.current ? undefined : "initial-badge"}
+                                onAnimationComplete={() => {
+                                    badgeInitialized.current = true;
+                                }}
                                 transition={{ type: "spring", stiffness: 500, damping: 25 }}
                             >
-                                {cartItemCount}
+                                <motion.span
+                                    key={itemCount}
+                                    initial={badgeInitialized.current ? { scale: 0.5, opacity: 0 } : {}}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    {itemCount}
+                                </motion.span>
                             </motion.div>
                         )}
                     </div>
