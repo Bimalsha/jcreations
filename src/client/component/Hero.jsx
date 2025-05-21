@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from "motion/react"
+import { motion } from "framer-motion"; // Fixed import
 import { Link } from "react-router-dom";
 import { FaArrowRightLong } from "react-icons/fa6";
 
@@ -122,8 +122,8 @@ function Hero() {
                         />
                     </motion.div>
                 </motion.div>
-                <div className={'p-2  lg:hidden md:hidden w-full'}>
-                    <div className="w-full  rounded-3xl shadow-lg overflow-hidden">
+                <div className={'p-2 lg:hidden md:hidden w-full'}>
+                    <div className="w-full rounded-3xl shadow-lg overflow-hidden">
                         <div className="relative">
                             <img
                                 src="/hero/home%20back.webp"
@@ -133,7 +133,7 @@ function Hero() {
                             <div
                                 className="absolute top-8 right-8 bg-white p-2 rounded-lg shadow-md text-sm font-semibold text-gray-700">
                                 <div
-                                    className="absolute -top-3 -right-3 stamp text-white text-xs p-4  rounded-full font-bold">
+                                    className="absolute -top-3 -right-3 stamp text-white text-xs p-4 rounded-full font-bold">
                                     %
                                 </div>
                                 <span className="text-2xl font-bold text-[#F7A313]">10%</span>
@@ -141,18 +141,15 @@ function Hero() {
                             </div>
                             <div
                                 className="absolute bottom-4 left-4 p-2 rounded-lg shadow-md text-sm font-semibold text-gray-700">
-                                <span className={'font-bold leading-tight text-white mt-6 0  text-2xl'}>Be The <span
+                                <span className={'font-bold leading-tight text-white mt-6 0 text-2xl'}>Be The <span
                                     className={'text-[#F7A313]'}>First</span><br/> Delivery &<br/> Easy Pick Up</span>
                             </div>
                             <Link to={'/'}
                                   className="absolute bottom-4 right-4 bg-[#F7A313] p-2 px-4 rounded-tl-3xl text-sm rounded-br-3xl text-white flex items-center gap-2">
-
                                 Order Now <FaArrowRightLong/>
                             </Link>
                         </div>
-
                     </div>
-
                 </div>
             </section>
         </>
