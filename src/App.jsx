@@ -7,7 +7,6 @@ import Account from "./client/pages/Account.jsx";
 import Footer from './client/component/Footer.jsx';
 import Header from './client/component/Header.jsx';
 import BottomNavigator from './client/component/BottomNavigator.jsx';
-import PageTransition from './client/component/utils/PageTransition.jsx';
 import SignIn from "./client/pages/SignIn.jsx";
 import SingleProduct from "./client/pages/SingleProduct.jsx";
 import AdminLogin from "./admin/pages/AdminLogin.jsx";
@@ -43,16 +42,16 @@ function App() {
             <main className={`flex-grow ${!isAuthPage && !isDashboardPage ? 'pt-16' : ''}`}>
                 <Routes location={location} key={location.pathname}>
                     {/* Public client routes */}
-                    <Route path="/" element={<PageTransition><Home /></PageTransition>} />
-                    <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
-                    <Route path="/order" element={<PageTransition><Order /></PageTransition>} />
-                    <Route path="/account" element={<PageTransition><Account /></PageTransition>} />
-                    <Route path="/signin" element={<PageTransition><SignIn /></PageTransition>} />
-                    <Route path="/singleproduct/:id" element={<PageTransition><SingleProduct /></PageTransition>} />
-                    <Route path="/refund-policy" element={<PageTransition><Refund /></PageTransition>} />
+                    <Route path="/" element={<Home />} />
+                    <Route path="/cart" element={<Cart />} />
+                    <Route path="/order" element={<Order />} />
+                    <Route path="/account" element={<Account />} />
+                    <Route path="/signin" element={<SignIn />} />
+                    <Route path="/singleproduct/:id" element={<SingleProduct />} />
+                    <Route path="/refund-policy" element={<Refund />} />
+                    <Route path="/privacy-policy" element={<Privacy />} />
+                    <Route path="/terms-conditions" element={<Terms />} />
 
-                    <Route path="/privacy-policy" element={<PageTransition><Privacy /></PageTransition>} />
-                    <Route path="/terms-conditions" element={<PageTransition><Terms /></PageTransition>} />
                     {/* Admin routes */}
                     <Route path="/adminlogin" element={<AdminLogin />} />
 

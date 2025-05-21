@@ -1,14 +1,16 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import api from "../../../utils/axios.js";
+import { useNavigate } from 'react-router-dom';
 
-function Categoryitem() {
+function Categoryitem({ onCategoryClick }) {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const scrollRef = useRef(null);
     const DEFAULT_IMAGE = "/placeholder.png";
+    const navigate = useNavigate();
 
     // Fetch categories from API
     useEffect(() => {
@@ -88,8 +90,18 @@ function Categoryitem() {
     }, []);
 
     const handleCategoryClick = (category) => {
-        setSelectedCategory(category.id === selectedCategory ? null : category.id);
-        // Here you would typically add functionality to filter products by category
+        // Update UI to show this category as selected
+        setSelectedCategory(category.id);
+
+        // Instead of navigating to search page, we'll just pass the category
+        // to the parent component which should handle opening the search modal
+        if (onCategoryClick) {
+            onCategoryClick({
+                id: category.id,
+                name: category.name,
+                action: 'openSearch'
+            });
+        }
     };
 
     // Loading skeleton
@@ -131,13 +143,7 @@ function Categoryitem() {
                             variants={item}
                         >
                             <motion.div
-                                className="rounded-full w-20 h-20 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 shadow-md"
-                                variants={shimmerVariant}
-                                initial="initial"
-                                animate="animate"
-                            />
-                            <motion.div
-                                className="mt-2 h-3 w-14 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100"
+                                className="mt-2 h-8 w-24 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 rounded-md"
                                 variants={shimmerVariant}
                                 initial="initial"
                                 animate="animate"
@@ -169,7 +175,7 @@ function Categoryitem() {
             animate="visible"
             variants={container}
         >
-            {/* Desktop view - grid layout */}
+            {/* Desktop view - grid layout with image and name */}
             <div className="hidden md:grid md:grid-cols-6 md:gap-4">
                 {categories.map((category, index) => (
                     <motion.div
@@ -181,7 +187,7 @@ function Categoryitem() {
                         onClick={() => handleCategoryClick(category)}
                     >
                         <motion.div
-                            className={`rounded-full flex flex-col items-center justify-center w-36 h-36 p-4   ${
+                            className={`rounded-full flex flex-col items-center justify-center w-36 h-36 p-4 ${
                                 selectedCategory === category.id
                                     ? "bg-[#F7A313]/20 border-2 border-[#F7A313]"
                                     : "bg-[#FFF7E6] border-[#F7A313] border-2 shadow-gray-200"
@@ -230,7 +236,7 @@ function Categoryitem() {
                 ))}
             </div>
 
-            {/* Mobile view - horizontal scroll */}
+            {/* Mobile view - horizontal scroll with only category names */}
             <div
                 ref={scrollRef}
                 className="md:hidden flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-2 snap-x snap-mandatory"
@@ -241,17 +247,17 @@ function Categoryitem() {
             >
                 {categories.map((category, index) => (
                     <motion.div
-                        className="flex flex-col justify-center items-center flex-shrink-0 snap-center"
+                        className="flex-shrink-0 snap-center"
                         key={category.id || index}
                         variants={item}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => handleCategoryClick(category)}
                     >
                         <motion.div
-                            className={`rounded-full flex flex-col items-center justify-center w-20 h-20 p-3 ${
+                            className={`px-4 py-2 rounded-full ${
                                 selectedCategory === category.id
-                                    ? "bg-[#F7A313]/20 border-2 border-[#F7A313]"
-                                    : "bg-[#FFF7E6] shadow-md shadow-gray-300"
+                                    ? "bg-[#F7A313] text-white"
+                                    : "bg-[#FFF7E6] border border-[#F7A313]/30 text-gray-800"
                             }`}
                             whileHover={{
                                 boxShadow: "0px 5px 15px rgba(247, 163, 19, 0.2)",
@@ -262,44 +268,20 @@ function Categoryitem() {
                                 { scale: [1, 1.1, 1] } :
                                 { scale: 1 }}
                         >
-                            <motion.img
-                                src={getImageSrc(category)}
-                                alt={category.name}
-                                className="w-10 h-10 object-contain"
-                                initial={{ opacity: 0, scale: 0 }}
-                                animate={{
-                                    opacity: 1,
-                                    scale: 1,
-                                    rotate: selectedCategory === category.id ? [0, 10, 0, -10, 0] : 0
-                                }}
-                                transition={{
-                                    delay: index * 0.1 + 0.3,
-                                    rotate: {
-                                        repeat: selectedCategory === category.id ? Infinity : 0,
-                                        duration: 0.8
-                                    }
-                                }}
-                                onError={(e) => {
-                                    e.target.src = DEFAULT_IMAGE;
-                                    e.target.onerror = null;
-                                }}
-                            />
+                            <motion.span
+                                className="text-sm font-medium"
+                                whileHover={{ color: selectedCategory === category.id ? "#FFFFFF" : "#F7A313" }}
+                            >
+                                {category.name}
+                            </motion.span>
                         </motion.div>
-                        <motion.span
-                            className={`mt-2 text-xs text-center ${
-                                selectedCategory === category.id ? "text-[#F7A313] font-medium" : ""
-                            }`}
-                            whileHover={{ color: "#F7A313" }}
-                        >
-                            {category.name}
-                        </motion.span>
                     </motion.div>
                 ))}
             </div>
 
-            {/* Scroll indicator with improved animation */}
+            {/* Scroll indicator */}
             <AnimatePresence>
-                {categories.length > 0 && (
+                {categories.length > 4 && (
                     <motion.div
                         className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 backdrop-blur-sm p-1.5 rounded-full shadow-md md:hidden z-10"
                         initial={{ opacity: 0, x: 20 }}

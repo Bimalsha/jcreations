@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from "react-router-dom";
 import { motion } from 'framer-motion';
 import api from '../../utils/axios.js';
+
 
 function BottomNavigator() {
     const location = useLocation();
@@ -30,6 +32,7 @@ function BottomNavigator() {
         const intervalId = setInterval(fetchCartCount, 8000); // Every 10 seconds
         
         return () => clearInterval(intervalId);
+
     }, []);
 
     return (
@@ -73,6 +76,7 @@ function BottomNavigator() {
                             whileTap={{ scale: 0.9 }}
                             transition={{ type: "spring", stiffness: 400, damping: 17 }}
                         />
+
                         {/* Cart badge */}
                         {cartItemCount > 0 && (
                             <motion.div
@@ -102,7 +106,6 @@ function BottomNavigator() {
                     )}
                 </Link>
 
-                {/* Repeat the same pattern for Order and Account links */}
                 <Link to={'/order'} type="button"
                       className="inline-flex flex-col items-center justify-center px-5 group relative">
                     <motion.img
