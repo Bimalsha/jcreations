@@ -1,4 +1,3 @@
-// src/client/component/Search.jsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IoMdClose } from 'react-icons/io';
@@ -8,7 +7,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import SearchItem from "./utils/Searchitem.jsx";
 
-function Search({ isOpen, onClose }) {
+function Search({ isOpen, onClose, initialCategory }) {
     const navigate = useNavigate();
     // Search state
     const [searchQuery, setSearchQuery] = useState('');
@@ -43,6 +42,24 @@ function Search({ isOpen, onClose }) {
     // Reference to track if component is mounted
     const isMounted = useRef(true);
     const abortControllerRef = useRef(null);
+
+    // Set category ID when initialCategory prop changes or when search opens
+    useEffect(() => {
+        if (isOpen && initialCategory) {
+            setCategoryId(initialCategory);
+            // Show filters panel when category is selected
+            setShowFilters(true);
+
+            // Update search params and trigger search with the category
+            if (searchParamsRef.current.categoryId !== initialCategory) {
+                searchParamsRef.current.categoryId = initialCategory;
+                // Small delay to ensure state has updated
+                setTimeout(() => {
+                    searchProducts(false);
+                }, 100);
+            }
+        }
+    }, [isOpen, initialCategory]);
 
     // Format product data to ensure consistency
     const formatProductData = useCallback((product) => {

@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import api from "../../../utils/axios.js";
+import { useNavigate } from 'react-router-dom';
 
 function Categoryitem({ onCategoryClick }) {
     const [categories, setCategories] = useState([]);
@@ -9,6 +10,7 @@ function Categoryitem({ onCategoryClick }) {
     const [selectedCategory, setSelectedCategory] = useState(null);
     const scrollRef = useRef(null);
     const DEFAULT_IMAGE = "/placeholder.png";
+    const navigate = useNavigate();
 
     // Fetch categories from API
     useEffect(() => {
@@ -88,9 +90,17 @@ function Categoryitem({ onCategoryClick }) {
     }, []);
 
     const handleCategoryClick = (category) => {
-        setSelectedCategory(category.id === selectedCategory ? null : category.id);
+        // Update UI to show this category as selected
+        setSelectedCategory(category.id);
+
+        // Instead of navigating to search page, we'll just pass the category
+        // to the parent component which should handle opening the search modal
         if (onCategoryClick) {
-            onCategoryClick(category);
+            onCategoryClick({
+                id: category.id,
+                name: category.name,
+                action: 'openSearch'
+            });
         }
     };
 

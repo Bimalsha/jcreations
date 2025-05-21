@@ -122,7 +122,7 @@ function Hero() {
                         />
                     </motion.div>
                 </motion.div>
-                <div className={'p-2 lg:hidden md:hidden w-full'}>
+                <div className={'p-2 lg:hidden md:hidden w-full pt-20'}>
                     <div className="w-full rounded-3xl shadow-lg overflow-hidden">
                         <div className="relative">
                             <img
