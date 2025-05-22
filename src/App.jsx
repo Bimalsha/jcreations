@@ -18,6 +18,8 @@ import {Toaster} from "react-hot-toast";
 import Refund from "./client/component/Refund.jsx";
 import Privacy from "./client/component/Privacy.jsx";
 import Terms from "./client/component/Terms.jsx";
+import Invoices from "./client/pages/Invoices.jsx";
+
 
 function App() {
     const location = useLocation();
@@ -51,6 +53,7 @@ function App() {
                     <Route path="/refund-policy" element={<Refund />} />
                     <Route path="/privacy-policy" element={<Privacy />} />
                     <Route path="/terms-conditions" element={<Terms />} />
+                    <Route path="/invoice/:id" element={<Invoices />} />
 
                     {/* Admin routes */}
                     <Route path="/adminlogin" element={<AdminLogin />} />

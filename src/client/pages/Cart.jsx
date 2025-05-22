@@ -15,6 +15,7 @@ import OrderConfirmed from '../component/utils/OrderConfirmed.jsx';
 function Cart() {
     // Get cart functions from the store
     const { decreaseItemQuantity } = useCartStore();
+    const [orderId, setOrderId] = useState(localStorage.getItem('jcreations_order_id') || null);
     
     useEffect(() => {
         // Scroll to top when cart page loads
@@ -247,6 +248,7 @@ function Cart() {
                     if (response && response.data) {
                         if (response.data.orderId) {
                             localStorage.setItem('jcreations_order_id', response.data.orderId);
+                            setOrderId(response.data.orderId);
                         }
                         setCurrentStep(3);
                     }
@@ -262,6 +264,7 @@ function Cart() {
                         // Store order ID before initiating payment
                         if (responseData.order_id) {
                             localStorage.setItem('jcreations_order_id', responseData.order_id);
+                            setOrderId(responseData.order_id);
                         }
 
                         // Check if Payhere SDK is loaded
@@ -522,7 +525,7 @@ function Cart() {
                 {currentStep === 3 && (
                     // Order confirmation
                     <div className="max-w-7xl mx-auto px-4 py-10 pt-20 md:p-20 transition-all duration-300 ease-in-out">
-                        <OrderConfirmed />
+                        <OrderConfirmed id={orderId} />
                     </div>
                 )}
 
