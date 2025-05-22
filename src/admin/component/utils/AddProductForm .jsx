@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import api from "../../../utils/axios.js";
-import toast, { Toaster } from 'react-hot-toast'; // Import both toast and Toaster
+import toast, { Toaster } from 'react-hot-toast';
 
 const AddProductForm = ({ onSuccess, initialData, isEditing }) => {
     const [name, setName] = useState("");
     const [category, setCategory] = useState("");
     const [price, setPrice] = useState("");
     const [discountPercentage, setDiscountPercentage] = useState("");
+    const [discountedPrice, setDiscountedPrice] = useState("");
     const [description, setDescription] = useState("");
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -37,6 +38,7 @@ const AddProductForm = ({ onSuccess, initialData, isEditing }) => {
             setCategory(initialData.category_id?.toString() || initialData.category || "");
             setPrice(initialData.price || "");
             setDiscountPercentage(initialData.discount_percentage || "");
+            setDiscountedPrice(initialData.discounted_price || "");
             setDescription(initialData.description || "");
 
             // Handle existing images if any
@@ -168,7 +170,6 @@ const AddProductForm = ({ onSuccess, initialData, isEditing }) => {
         return isValid;
     };
 
-// Update the handleSubmit function in AddProductForm.jsx
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
@@ -180,9 +181,15 @@ const AddProductForm = ({ onSuccess, initialData, isEditing }) => {
         formDataToSend.append('name', name);
         formDataToSend.append('category_id', category);
         formDataToSend.append('price', price);
-        formDataToSend.append('discount_percentage', discountPercentage || 0);
         formDataToSend.append('description', description);
         formDataToSend.append('status', 'in_stock');
+
+        // Add either discount percentage or discounted price (not both)
+        if (discountPercentage) {
+            formDataToSend.append('discount_percentage', discountPercentage);
+        } else if (discountedPrice) {
+            formDataToSend.append('discounted_price', discountedPrice);
+        }
 
         // Append image files
         Object.keys(formData).forEach(key => {
@@ -202,21 +209,7 @@ const AddProductForm = ({ onSuccess, initialData, isEditing }) => {
             }
 
             // Reset form
-            setName("");
-            setCategory("");
-            setPrice("");
-            setDiscountPercentage("");
-            setDescription("");
-            setFormData({
-                image1: null,
-                image2: null,
-                image3: null
-            });
-            setPreviews({
-                image1: null,
-                image2: null,
-                image3: null
-            });
+            resetForm();
 
             // Call success callback with true to indicate refresh is needed
             if (typeof onSuccess === 'function') {
@@ -228,6 +221,25 @@ const AddProductForm = ({ onSuccess, initialData, isEditing }) => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const resetForm = () => {
+        setName("");
+        setCategory("");
+        setPrice("");
+        setDiscountPercentage("");
+        setDiscountedPrice("");
+        setDescription("");
+        setFormData({
+            image1: null,
+            image2: null,
+            image3: null
+        });
+        setPreviews({
+            image1: null,
+            image2: null,
+            image3: null
+        });
     };
 
     // Get count of active images
@@ -306,20 +318,40 @@ const AddProductForm = ({ onSuccess, initialData, isEditing }) => {
                             required
                         />
                     </div>
-                    <div className="relative transition-all duration-300 hover:shadow-md">
-                        <input
-                            type="number"
-                            placeholder="Discount Percentage (optional)"
-                            value={discountPercentage}
-                            onChange={(e) => setDiscountPercentage(e.target.value)}
-                            className="border border-gray-300 rounded-lg p-3 w-full bg-white/70 backdrop-blur-sm transition-all focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                            min="0"
-                            max="100"
-                            step="0.1"
-                        />
-                        <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-600 text-xs">
-                          %
-                        </span>
+                    <div className={'flex w-full gap-2 items-center'}>
+                        <div className="relative transition-all duration-300 hover:shadow-md w-1/2">
+                            <input
+                                type="number"
+                                placeholder="Discount Percentage"
+                                value={discountPercentage}
+                                onChange={(e) => {
+                                    setDiscountPercentage(e.target.value);
+                                    if (e.target.value) setDiscountedPrice("");
+                                }}
+                                className="border border-gray-300 rounded-lg p-3 w-full bg-white/70 backdrop-blur-sm transition-all focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                            />
+                            <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-600 text-xs">
+                                %
+                            </span>
+                        </div>
+                        <span>or</span>
+                        <div className="relative transition-all duration-300 hover:shadow-md w-1/2">
+                            <input
+                                type="number"
+                                placeholder="Discounted Price"
+                                value={discountedPrice}
+                                onChange={(e) => {
+                                    setDiscountedPrice(e.target.value);
+                                    if (e.target.value) setDiscountPercentage("");
+                                }}
+                                className="border border-gray-300 rounded-lg p-3 w-full bg-white/70 backdrop-blur-sm transition-all focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+                                min="0"
+                                step="0.01"
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -336,7 +368,8 @@ const AddProductForm = ({ onSuccess, initialData, isEditing }) => {
                 </div>
 
                 {/* Image Upload */}
-                <div className="bg-white/30 backdrop-blur-sm p-4 rounded-lg border border-gray-200 transition-all duration-300 hover:shadow-md">
+                <div
+                    className="bg-white/30 backdrop-blur-sm p-4 rounded-lg border border-gray-200 transition-all duration-300 hover:shadow-md">
                     <p className="text-sm mb-3 text-gray-600 font-medium">
                         Product Images <span className="text-xs text-gray-400">(At least 1 image required, max 3)</span>
                     </p>
