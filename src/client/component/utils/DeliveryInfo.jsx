@@ -113,6 +113,16 @@ const DeliveryInfo = ({ deliveryInfo, setDeliveryInfo, onShippingChange }) => {
               />
             </div>
           </div>
+
+        </div>
+        <div className={'flex flex-col items-start mt-4'}>
+          <span className={'text-sm text-red-700'}>Delivery is possible from two hours after confirmation of the order.</span>
+          <span className={'font-semibold text-sm text-green-400'}>Dilivery Times</span>
+          <ul className={'list-disc list-inside text-sm text-gray-600'}>
+            <li>Morning: 9:00 AM - 11:00 AM</li>
+            <li>Evening: 12:00 PM - 6:00 PM</li>
+            <li>Night: 7:00 PM - 10:00 PM</li>
+          </ul>
         </div>
       </form>
     </div>
