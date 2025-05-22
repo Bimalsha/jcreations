@@ -1,28 +1,25 @@
-
 import React, { useEffect, useRef } from 'react';
-
 import { Link, useLocation } from "react-router-dom";
 import { motion } from 'framer-motion';
 // Import the cart store
 import useCartStore from '../../stores/cartStore';
 
-
 function BottomNavigator() {
     const location = useLocation();
     const currentPath = location.pathname;
-    
+
     // Use cart store instead of local state
-    const { itemCount, fetchCart } = useCartStore();
+    const { itemCount, subtotal, fetchCart } = useCartStore();
     const badgeInitialized = useRef(false);
 
     // Fetch cart data to get the item count
     useEffect(() => {
         // Initial fetch
         fetchCart();
-        
+
         // Set up an interval to refresh the cart count periodically
         const intervalId = setInterval(fetchCart, 10000); // Every 10 seconds
-        
+
         return () => clearInterval(intervalId);
     }, [fetchCart]);
 
@@ -69,11 +66,10 @@ function BottomNavigator() {
                             transition={{ type: "spring", stiffness: 400, damping: 17 }}
                         />
 
-                        {/* Cart badge - now using Zustand store */}
+                        {/* Cart badge - now showing subtotal instead of count */}
                         {itemCount > 0 && (
-
                             <motion.div
-                                className="absolute -top-2 -right-2 bg-[#F7A313] text-black text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
+                                className="absolute -top-2 -right-2 bg-[#F7A313] text-black text-[9px] font-bold rounded-full px-2 py-1 min-w-[32px] text-center"
                                 initial={badgeInitialized.current ? { scale: 1 } : { scale: 0 }}
                                 animate={{ scale: 1 }}
                                 key={badgeInitialized.current ? undefined : "initial-badge"}
@@ -83,12 +79,12 @@ function BottomNavigator() {
                                 transition={{ type: "spring", stiffness: 500, damping: 25 }}
                             >
                                 <motion.span
-                                    key={itemCount}
+                                    key={subtotal}
                                     initial={badgeInitialized.current ? { scale: 0.5, opacity: 0 } : {}}
                                     animate={{ scale: 1, opacity: 1 }}
                                     transition={{ duration: 0.2 }}
                                 >
-                                    {itemCount}
+                                    Rs{subtotal}
                                 </motion.span>
                             </motion.div>
                         )}

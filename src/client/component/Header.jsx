@@ -4,11 +4,62 @@ import { FaPhoneAlt } from "react-icons/fa";
 import { LuShoppingBag } from "react-icons/lu";
 import { Link } from "react-router-dom";
 import Search from './Search';
+import axios from 'axios';
+// Import cart store
+import useCartStore from '../../stores/cartStore';
 
 function Header() {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [visible, setVisible] = useState(true);
     const [scrollPosition, setScrollPosition] = useState(0);
+    const [contactNumber, setContactNumber] = useState('070 568 7994');
+
+    // Get cart item count from store
+    const { itemCount, fetchCart } = useCartStore();
+
+    // Fetch contact numbers
+    // Fetch contact numbers - updated with proper error handling and debugging
+    const fetchContactNumbers = async () => {
+        try {
+            // Use complete URL if needed (adjust according to your API)
+            const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+            const response = await axios.get(`${API_BASE_URL}/mobile-numbers`, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            console.log('Contact number response:', response.data);
+
+            if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                // Make sure we're getting a valid phone number string
+                const phoneNumber = response.data[0].number;
+                if (phoneNumber && typeof phoneNumber === 'string') {
+                    setContactNumber(phoneNumber);
+                    console.log('Set contact number to:', phoneNumber);
+                } else {
+                    console.warn('Invalid phone number format:', phoneNumber);
+                }
+            } else {
+                console.warn('No phone numbers returned from API');
+            }
+        } catch (error) {
+            console.error('Error fetching contact numbers:', error);
+            if (error.response) {
+                console.error('Response status:', error.response.status);
+                console.error('Response data:', error.response.data);
+            }
+        }
+    };
+    // Fetch cart data and contact numbers
+    useEffect(() => {
+        fetchCart();
+        fetchContactNumbers();
+
+        // Refresh cart data periodically
+        const intervalId = setInterval(fetchCart, 10000);
+        return () => clearInterval(intervalId);
+    }, [fetchCart]);
 
     // Improved scroll handling
     useEffect(() => {
@@ -77,12 +128,17 @@ function Header() {
 
                         {/* Contact Info and Icons */}
                         <div className="flex items-center space-x-4">
-                            <Link to={'tel:0705687994'} type={'button'} className="flex items-center space-x-2 text-gray-700">
+                            <Link to={`tel:${contactNumber}`} type={'button'} className="flex items-center space-x-2 text-gray-700">
                                 <FaPhoneAlt className="text-[#000F20] w-4 "/>
-                                <span className="font-medium text-[10px] lg:text-sm">070 568 7994</span>
+                                <span className="font-medium text-[10px] lg:text-sm">{contactNumber}</span>
                             </Link>
-                            <Link to={'/cart'} className="p-2 shadow-lg shadow-[#FDEAC9] rounded-full hover:bg-[#F7A313] transition-colors">
+                            <Link to={'/cart'} className="p-2 shadow-lg shadow-[#FDEAC9] rounded-full hover:bg-[#F7A313] transition-colors relative">
                                 <LuShoppingBag className="text-[#000F20] w-4 lg:w-full" size={20}/>
+                                {itemCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-[#F7A313] text-black text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                                        {itemCount}
+                                    </span>
+                                )}
                             </Link>
                             <Link to={'/account'} className="p-2 shadow-lg shadow-[#FDEAC9] rounded-full hover:bg-[#F7A313] transition-colors">
                                 <FiUser className="text-[#000F20] w-4 lg:w-full" size={20}/>
