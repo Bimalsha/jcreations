@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import api from '../../utils/axios.js';
 import toast from 'react-hot-toast';
+import useCartStore from '../../stores/cartStore'; // Import the cart store
 import BottomNavigator from "../component/BottomNavigator.jsx";
 import Header from "../component/Header.jsx";
 import CartNavigator from '../component/utils/CartNavigator.jsx';
@@ -12,7 +13,9 @@ import PaymentMethodSelector from '../component/utils/PaymentMethodSelector.jsx'
 import OrderConfirmed from '../component/utils/OrderConfirmed.jsx';
 
 function Cart() {
-
+    // Get cart functions from the store
+    const { decreaseItemQuantity } = useCartStore();
+    
     useEffect(() => {
         // Scroll to top when cart page loads
         window.scrollTo(0, 0);
@@ -54,10 +57,13 @@ function Cart() {
             // Add item to removing state first for animation
             setRemovingItems(prev => [...prev, id]);
 
+            // Update UI immediately using zustand
+            decreaseItemQuantity(id);
+
             // Get cart ID from local storage
             const cartId = localStorage.getItem('jcreations_cart_id');
             if (cartId) {
-                // Updated API endpoint to /cart/items/{id}
+                // Keep existing API call
                 await api.delete(`/cart/items/${id}`, {
                     data: { cart_id: parseInt(cartId) }
                 });
@@ -116,10 +122,12 @@ function Cart() {
             const item = cartItems.find(item => item.id === id);
             if (!item || item.quantity <= 1) return;
 
-            // Get cart ID from local storage
+            // Update UI immediately using zustand
+            decreaseItemQuantity(id);
+
+            // Keep existing API call
             const cartId = localStorage.getItem('jcreations_cart_id');
             if (cartId) {
-                // Updated API endpoint to /cart/items/{id}
                 await api.put(`/cart/items/${id}`, {
                     quantity: item.quantity - 1,
                     cart_id: parseInt(cartId)

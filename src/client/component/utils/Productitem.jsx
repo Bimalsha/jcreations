@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import api from "../../../utils/axios";
 import { useNavigate } from "react-router-dom";
+import useCartStore from "../../../stores/cartStore"; // Import the cart store
 
 const Productitem = forwardRef(({ onLoadingChange }, ref) => {
   const navigate = useNavigate();
@@ -12,6 +13,9 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
   const [limit, setLimit] = useState(20); // Start with 20 items
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
+  
+  // Get cart functions from the store
+  const { cartItems, increaseItemQuantity } = useCartStore();
 
   const fetchProducts = async () => {
     try {
@@ -81,12 +85,26 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
         payload.cart_id = existingCartId;
       }
 
-      const response = await api.post("/cart/items", payload);
-      if (response.data && response.data.cart_id) {
-        localStorage.setItem("jcreations_cart_id", response.data.cart_id);
+      // First, check if the item is already in the cart
+      const existingItem = cartItems.find(item => item.product_id === productId);
+      
+      if (existingItem) {
+        // If item exists, just increase the quantity
+        increaseItemQuantity(existingItem.id);
+      } else {
+        // If not in cart, add via API and then update local state
+        const response = await api.post("/cart/items", payload);
+        if (response.data && response.data.cart_id) {
+          localStorage.setItem("jcreations_cart_id", response.data.cart_id);
+          
+          // After API success, update local cart state
+          // We'll need to fetch the cart to get the new item with correct ID
+          const { fetchCart } = useCartStore.getState();
+          await fetchCart();
+        }
       }
 
-      toast.success("Add to cart successfully");
+      toast.success("Added to cart successfully");
     } catch (err) {
       console.error("Error adding to cart:", err);
       toast.error(err.response?.data?.message || "Failed to add item to cart");
