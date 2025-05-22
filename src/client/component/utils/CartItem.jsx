@@ -31,14 +31,14 @@ const CartItem = ({ item, onRemove, onIncreaseQuantity, onDecreaseQuantity, isRe
           <img
               src={item.image}
               alt={item.name}
-              className="h-28 w-28  object-cover rounded-md"
+              className="h-16 w-16 lg:h-24 lg:w-24  object-cover rounded-md"
           />
 
           {/* Right: Product Details and Bottom Controls */}
           <div className="ml-4 flex flex-col flex-grow">
             {/* Product Details */}
             <div>
-              <h3 className="text-sm sm:text-base font-bold text-gray-800">{item.name}</h3>
+              <h3 className="text-sm sm:text-base font-bold text-gray-800">{item.name.length > 15 ? `${item.name.substring(0, 15)}...` : item.name}</h3>
 
               {/* Price Display - Show discount if applicable */}
               {item.discount_percentage > 0 ? (

@@ -7,19 +7,17 @@ import Account from "./client/pages/Account.jsx";
 import Footer from './client/component/Footer.jsx';
 import Header from './client/component/Header.jsx';
 import BottomNavigator from './client/component/BottomNavigator.jsx';
-import PageTransition from './client/component/utils/PageTransition.jsx';
 import SignIn from "./client/pages/SignIn.jsx";
 import SingleProduct from "./client/pages/SingleProduct.jsx";
 import AdminLogin from "./admin/pages/AdminLogin.jsx";
 import Dashboard from "./admin/pages/Dashboard.jsx";
 import ProtectedAdminRoute from "./admin/component/ProtectedAdminRoute.jsx";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import useAuthStore from "./stores/authStore";
 import {Toaster} from "react-hot-toast";
 import Refund from "./client/component/Refund.jsx";
 import Privacy from "./client/component/Privacy.jsx";
 import Terms from "./client/component/Terms.jsx";
-import Invoices from "./client/pages/Invoices.jsx";
 
 function App() {
     const location = useLocation();
@@ -42,7 +40,7 @@ function App() {
             />
 
             <main className={`flex-grow ${!isAuthPage && !isDashboardPage ? 'pt-16' : ''}`}>
-                <Routes location={location}>
+                <Routes location={location} key={location.pathname}>
                     {/* Public client routes */}
                     <Route path="/" element={<Home />} />
                     <Route path="/cart" element={<Cart />} />
@@ -51,10 +49,8 @@ function App() {
                     <Route path="/signin" element={<SignIn />} />
                     <Route path="/singleproduct/:id" element={<SingleProduct />} />
                     <Route path="/refund-policy" element={<Refund />} />
-
                     <Route path="/privacy-policy" element={<Privacy />} />
                     <Route path="/terms-conditions" element={<Terms />} />
-                    <Route path="/invoice/:id" element={<Invoices />} />
 
                     {/* Admin routes */}
                     <Route path="/adminlogin" element={<AdminLogin />} />

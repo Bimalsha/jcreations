@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+
 import api from '../utils/axios.js';
 
 const useCartStore = create((set, get) => ({
@@ -55,5 +56,6 @@ const useCartStore = create((set, get) => ({
     }
   }
 }));
+
 
 export default useCartStore;

@@ -1,8 +1,11 @@
+
 import React, { useEffect, useRef } from 'react';
+
 import { Link, useLocation } from "react-router-dom";
 import { motion } from 'framer-motion';
 // Import the cart store
 import useCartStore from '../../stores/cartStore';
+
 
 function BottomNavigator() {
     const location = useLocation();
@@ -22,6 +25,7 @@ function BottomNavigator() {
         
         return () => clearInterval(intervalId);
     }, [fetchCart]);
+
 
     return (
         <div className="fixed bottom-0 left-0 z-50 w-full h-20">
@@ -64,8 +68,10 @@ function BottomNavigator() {
                             whileTap={{ scale: 0.9 }}
                             transition={{ type: "spring", stiffness: 400, damping: 17 }}
                         />
+
                         {/* Cart badge - now using Zustand store */}
                         {itemCount > 0 && (
+
                             <motion.div
                                 className="absolute -top-2 -right-2 bg-[#F7A313] text-black text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
                                 initial={badgeInitialized.current ? { scale: 1 } : { scale: 0 }}
@@ -104,7 +110,6 @@ function BottomNavigator() {
                     )}
                 </Link>
 
-                {/* Repeat the same pattern for Order and Account links */}
                 <Link to={'/order'} type="button"
                       className="inline-flex flex-col items-center justify-center px-5 group relative">
                     <motion.img
