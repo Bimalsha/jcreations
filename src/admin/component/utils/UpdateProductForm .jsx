@@ -7,10 +7,12 @@ const UpdateProductForm = ({ product, onSuccess }) => {
     const [category, setCategory] = useState("");
     const [price, setPrice] = useState("");
     const [discountPercentage, setDiscountPercentage] = useState("");
+    const [discountedPrice, setDiscountedPrice] = useState("");
     const [description, setDescription] = useState("");
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [manualDiscountPrice, setManualDiscountPrice] = useState(false);
 
     // Track image changes
     const [existingImages, setExistingImages] = useState([]);
@@ -21,6 +23,28 @@ const UpdateProductForm = ({ product, onSuccess }) => {
 
     const MAX_IMAGES = 3;
     const DEFAULT_IMAGE = "/placeholder.png";
+
+    // Calculate discounted price from price and discount percentage
+    const calculateDiscountedPrice = (basePrice, discount) => {
+        const numPrice = parseFloat(basePrice);
+        const numDiscount = parseFloat(discount);
+
+        if (!isNaN(numPrice) && !isNaN(numDiscount) && numPrice > 0 && numDiscount > 0) {
+            return (numPrice - (numPrice * numDiscount / 100)).toFixed(2);
+        }
+        return "";
+    };
+
+    // Calculate discount percentage from price and discounted price
+    const calculateDiscountPercentage = (basePrice, discountPrice) => {
+        const numPrice = parseFloat(basePrice);
+        const numDiscountPrice = parseFloat(discountPrice);
+
+        if (!isNaN(numPrice) && !isNaN(numDiscountPrice) && numPrice > 0 && numDiscountPrice > 0 && numDiscountPrice < numPrice) {
+            return ((numPrice - numDiscountPrice) / numPrice * 100).toFixed(2);
+        }
+        return "";
+    };
 
     // Fetch categories when component mounts
     useEffect(() => {
@@ -49,7 +73,17 @@ const UpdateProductForm = ({ product, onSuccess }) => {
             setCategory(product.category_id || "");
             setPrice(product.price || "");
             setDiscountPercentage(product.discount_percentage || "");
+            setDiscountedPrice(product.discounted_price || "");
             setDescription(product.description || "");
+
+            // If both discount values exist, prioritize discount percentage for calculation
+            if (product.price && product.discount_percentage) {
+                const calculated = calculateDiscountedPrice(product.price, product.discount_percentage);
+                setDiscountedPrice(calculated);
+                setManualDiscountPrice(false);
+            } else if (product.price && product.discounted_price) {
+                setManualDiscountPrice(true);
+            }
 
             // Reset image states
             setExistingImages([]);
@@ -93,6 +127,42 @@ const UpdateProductForm = ({ product, onSuccess }) => {
             }
         }
     }, [product]);
+
+    // Update discounted price when price or discount percentage changes
+    useEffect(() => {
+        if (!manualDiscountPrice && price && discountPercentage) {
+            const calculated = calculateDiscountedPrice(price, discountPercentage);
+            setDiscountedPrice(calculated);
+        }
+    }, [price, discountPercentage, manualDiscountPrice]);
+
+    const handlePriceChange = (e) => {
+        const newPrice = e.target.value;
+        setPrice(newPrice);
+
+        // If discounted price was manually set, recalculate the percentage
+        if (manualDiscountPrice && discountedPrice) {
+            const newPercentage = calculateDiscountPercentage(newPrice, discountedPrice);
+            setDiscountPercentage(newPercentage);
+        }
+    };
+
+    const handleDiscountPercentageChange = (e) => {
+        setDiscountPercentage(e.target.value);
+        setManualDiscountPrice(false);
+    };
+
+    const handleDiscountedPriceChange = (e) => {
+        const newDiscountedPrice = e.target.value;
+        setDiscountedPrice(newDiscountedPrice);
+        setManualDiscountPrice(true);
+
+        // Calculate the new discount percentage
+        if (price) {
+            const newPercentage = calculateDiscountPercentage(price, newDiscountedPrice);
+            setDiscountPercentage(newPercentage);
+        }
+    };
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
@@ -250,10 +320,18 @@ const UpdateProductForm = ({ product, onSuccess }) => {
             formData.append('name', name);
             formData.append('category_id', category);
             formData.append('price', price);
-            formData.append('discount_percentage', discountPercentage || 0);
             formData.append('description', description);
             formData.append('status', product.status || 'in_stock');
             formData.append('_method', 'PUT'); // Laravel requires this for PUT requests
+
+            // Add discount percentage or discounted price
+            if (discountPercentage) {
+                formData.append('discount_percentage', discountPercentage);
+            }
+
+            if (manualDiscountPrice && discountedPrice) {
+                formData.append('discounted_price', discountedPrice);
+            }
 
             // Simple and explicit image handling
             // Case 1: All images removed
@@ -375,34 +453,48 @@ const UpdateProductForm = ({ product, onSuccess }) => {
                     </div>
                 </div>
 
-                {/* Price + Discount Percentage */}
+                {/* Price + Discount Percentage/Price */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <div className="transition-all duration-300 hover:shadow-md">
                         <input
                             type="number"
                             placeholder="Price"
                             value={price}
-                            onChange={(e) => setPrice(e.target.value)}
+                            onChange={handlePriceChange}
                             className="border border-gray-300 rounded-lg p-3 w-full bg-white/70 backdrop-blur-sm transition-all focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                             min="0.01"
                             step="0.01"
                             required
                         />
                     </div>
-                    <div className="relative transition-all duration-300 hover:shadow-md">
-                        <input
-                            type="number"
-                            placeholder="Discount Percentage (optional)"
-                            value={discountPercentage}
-                            onChange={(e) => setDiscountPercentage(e.target.value)}
-                            className="border border-gray-300 rounded-lg p-3 w-full bg-white/70 backdrop-blur-sm transition-all focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                            min="0"
-                            max="100"
-                            step="0.1"
-                        />
-                        <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-600 text-xs">
-                          %
-                        </span>
+                    <div className={'flex gap-2 items-center'}>
+                        <div className="relative transition-all duration-300 hover:shadow-md w-1/2">
+                            <input
+                                type="number"
+                                placeholder="Discount Percentage"
+                                value={discountPercentage}
+                                onChange={handleDiscountPercentageChange}
+                                className="border border-gray-300 rounded-lg p-3 w-full bg-white/70 backdrop-blur-sm transition-all focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                            />
+                            <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-600 text-xs">
+                                %
+                            </span>
+                        </div>
+                        <span>or</span>
+                        <div className="relative transition-all duration-300 hover:shadow-md w-1/2">
+                            <input
+                                type="number"
+                                placeholder="Discounted Price"
+                                value={discountedPrice}
+                                onChange={handleDiscountedPriceChange}
+                                className="border border-gray-300 rounded-lg p-3 w-full bg-white/70 backdrop-blur-sm transition-all focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+                                min="0"
+                                step="0.01"
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -419,7 +511,8 @@ const UpdateProductForm = ({ product, onSuccess }) => {
                 </div>
 
                 {/* Image Upload */}
-                <div className="bg-white/30 backdrop-blur-sm p-4 rounded-lg border border-gray-200 transition-all duration-300 hover:shadow-md">
+                <div
+                    className="bg-white/30 backdrop-blur-sm p-4 rounded-lg border border-gray-200 transition-all duration-300 hover:shadow-md">
                     <p className="text-sm mb-3 text-gray-600 font-medium">
                         Product Images <span className="text-xs text-gray-400">(At least 1 image required, max 3)</span>
                     </p>
