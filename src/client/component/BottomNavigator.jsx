@@ -78,13 +78,14 @@ function BottomNavigator() {
                                 }}
                                 transition={{ type: "spring", stiffness: 500, damping: 25 }}
                             >
+
                                 <motion.span
-                                    key={subtotal}
-                                    initial={badgeInitialized.current ? { scale: 0.5, opacity: 0 } : {}}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    transition={{ duration: 0.2 }}
+                                    key={`subtotal-${itemCount}-${subtotal}`}
+                                    initial={badgeInitialized.current ? {scale: 0.5, opacity: 0} : {}}
+                                    animate={{scale: 1, opacity: 1}}
+                                    transition={{duration: 0.2}}
                                 >
-                                    Rs{subtotal}
+                                    Rs {subtotal ? subtotal.toLocaleString() : 0}
                                 </motion.span>
                             </motion.div>
                         )}
