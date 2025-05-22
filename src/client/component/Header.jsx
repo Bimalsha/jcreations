@@ -1,5 +1,4 @@
-import React, { useState } from 'react'
-import { AiOutlineMail } from "react-icons/ai";
+import React, { useState, useEffect } from 'react'
 import { FiUser } from "react-icons/fi";
 import { FaPhoneAlt } from "react-icons/fa";
 import { LuShoppingBag } from "react-icons/lu";
@@ -8,6 +7,39 @@ import Search from './Search';
 
 function Header() {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [visible, setVisible] = useState(true);
+    const [scrollPosition, setScrollPosition] = useState(0);
+
+    // Improved scroll handling
+    useEffect(() => {
+        let lastScrollY = window.scrollY;
+        let ticking = false;
+
+        const handleScroll = () => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    const currentScrollY = window.scrollY;
+
+                    // Hide when scrolling down (beyond 20px)
+                    // Show when scrolling up or at the top
+                    if (currentScrollY > 20 && currentScrollY > lastScrollY) {
+                        setVisible(false);
+                    } else {
+                        setVisible(true);
+                    }
+
+                    lastScrollY = currentScrollY;
+                    setScrollPosition(currentScrollY);
+                    ticking = false;
+                });
+
+                ticking = true;
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const handleSearchClick = () => {
         setIsSearchOpen(true);
@@ -19,7 +51,11 @@ function Header() {
 
     return (
         <>
-            <header className="flex justify-center w-full px-2 z-50 py-3 bg-white shadow-md fixed">
+            <header
+                className={`flex justify-center w-full px-4 z-50 py-3 bg-white/95 backdrop-blur-sm fixed transition-all duration-300 ${
+                    visible ? 'shadow-lg translate-y-0' : '-translate-y-full shadow-none'
+                } ${scrollPosition > 50 ? 'rounded-b-xl' : ''}`}
+            >
                 {/* Logo */}
                 <div className={'flex flex-col w-full lg:max-w-7xl '}>
                     <div className={'flex items-center justify-between'}>
@@ -45,10 +81,10 @@ function Header() {
                                 <FaPhoneAlt className="text-[#000F20] w-4 "/>
                                 <span className="font-medium text-[10px] lg:text-sm">070 568 7994</span>
                             </Link>
-                            <Link to={'/cart'} className="p-2 shadow-lg shadow-[#FDEAC9] rounded-full hover:bg-[#F7A313]">
+                            <Link to={'/cart'} className="p-2 shadow-lg shadow-[#FDEAC9] rounded-full hover:bg-[#F7A313] transition-colors">
                                 <LuShoppingBag className="text-[#000F20] w-4 lg:w-full" size={20}/>
                             </Link>
-                            <Link to={'/account'} className="p-2 shadow-lg shadow-[#FDEAC9] rounded-full hover:bg-[#F7A313]">
+                            <Link to={'/account'} className="p-2 shadow-lg shadow-[#FDEAC9] rounded-full hover:bg-[#F7A313] transition-colors">
                                 <FiUser className="text-[#000F20] w-4 lg:w-full" size={20}/>
                             </Link>
                         </div>
