@@ -1,6 +1,6 @@
 import React from "react";
 
-const OrderConfirmed = () => {
+const OrderConfirmed = ({ id }) => {
   return (
     <div className="max-w-7xl mx-auto mt-10 p-6 bg-white shadow-2xl rounded-xl">
       <div className="text-center">
@@ -26,7 +26,7 @@ const OrderConfirmed = () => {
 
         {/* Order Number */}
         <p className="text-md text-black mb-6">
-          Order Number: <span className="font-bold">#123456</span>
+          Order Number: <span className="font-bold">#{id}</span>
         </p>
 
         {/* Continue Shopping Button */}
