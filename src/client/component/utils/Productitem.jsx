@@ -27,7 +27,7 @@ const Productitem = forwardRef(({ onLoadingChange }, ref) => {
       const count = countResponse.data.count || 0;
       setTotalCount(count);
 
-      console.log(`Total products: ${count}, Current limit: ${limit}`);
+
 
       // Fetch products with current limit
       const response = await api.get(`/products/${limit}`);

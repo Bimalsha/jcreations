@@ -155,10 +155,7 @@ const AddProductForm = ({ onSuccess, initialData, isEditing }) => {
             isValid = false;
         }
 
-        if (!description.trim()) {
-            toast.error("Product description is required");
-            isValid = false;
-        }
+        // Description validation removed - now optional
 
         // Check if at least one image is selected
         const hasImages = Object.values(previews).some(img => img !== null);
@@ -358,12 +355,11 @@ const AddProductForm = ({ onSuccess, initialData, isEditing }) => {
                 {/* Product Description */}
                 <div className="transition-all duration-300 hover:shadow-md">
                     <textarea
-                        placeholder="Product Description"
+                        placeholder="Product Description (optional)"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         rows="4"
-                        className="border border-gray-300 rounded-lg p-3 w-full bg-white/70 backdrop-blur-sm transition-all focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                        required
+                        className="border border-gray-300 rounded-lg p-3 w-full bg-white/70  transition-all focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                     />
                 </div>
 

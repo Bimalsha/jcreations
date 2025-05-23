@@ -29,8 +29,14 @@ function Categoryitem({ onCategoryClick }) {
         fetchCategories();
     }, []);
 
-    // Handle category click
-    const handleCategoryClick = (category) => {
+    // Handle category click with stopPropagation to prevent search bar opening
+    const handleCategoryClick = (category, e) => {
+        // Stop event propagation to prevent search bar from opening
+        if (e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
+
         setSelectedCategory(category.id);
 
         // Call the parent component's handler if provided
@@ -179,7 +185,7 @@ function Categoryitem({ onCategoryClick }) {
                         variants={item}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => handleCategoryClick(category)}
+                        onClick={(e) => handleCategoryClick(category, e)}
                     >
                         <motion.div
                             className={`rounded-full flex flex-col items-center justify-center w-36 h-36 p-4 ${
@@ -203,7 +209,7 @@ function Categoryitem({ onCategoryClick }) {
                                 className="w-16 h-16 object-contain"
                                 animate={selectedCategory === category.id ?
                                     { scale: [1, 1.2, 1], rotate: [0, 10, 0, -10, 0] } :
-                                    { rotate: [0, 5, 0, -5, 0] }}
+                                    { scale: 1, rotate: 0 }}
                                 transition={{
                                     duration: selectedCategory === category.id ? 0.8 : 5,
                                     repeat: Infinity,
@@ -246,7 +252,7 @@ function Categoryitem({ onCategoryClick }) {
                         key={category.id || index}
                         variants={item}
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => handleCategoryClick(category)}
+                        onClick={(e) => handleCategoryClick(category, e)}
                     >
                         <motion.div
                             className={`px-4 py-2 rounded-full ${

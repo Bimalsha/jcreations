@@ -1,56 +1,93 @@
-// In src/stores/useCartStore.js
 import { create } from 'zustand';
+import api from '../utils/axios.js';
 
-// Remove toFixed from calculation, keep subtotal as a number
-const getSubtotal = (items) => {
-    return items.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
+// Helper function to calculate subtotal
+const calculateSubtotal = (items) => {
+    if (!items || !Array.isArray(items) || items.length === 0) return 0;
+
+    return items.reduce((total, item) => {
+        const itemPrice = parseFloat(item.price) || 0;
+        const quantity = parseInt(item.quantity) || 1;
+        return total + itemPrice * quantity;
+    }, 0);
 };
 
 const useCartStore = create((set, get) => ({
-    items: [],
+    cartItems: [],
     itemCount: 0,
-    subtotal: 0, // Initialize as number, not string
+    subtotal: 0,
     loading: false,
     error: null,
 
+    // Fetch cart data from API
     fetchCart: async () => {
         set({ loading: true, error: null });
         try {
-            // Replace with your actual API call
-            const response = await fetch('/api/cart');
-            if (!response.ok) {
-                throw new Error('Failed to fetch cart');
-            }
-            const data = await response.json();
-            const cartItems = data.items || [];
+            const cartId = localStorage.getItem('jcreations_cart_id');
+            if (cartId) {
+                const response = await api.get(`/cart/${cartId}`);
+                if (response.data && response.data.items) {
+                    const items = response.data.items;
+                    const itemCount = items.reduce((count, item) => count + (parseInt(item.quantity) || 1), 0);
+                    const subtotal = calculateSubtotal(items);
 
-            set({
-                items: cartItems,
-                itemCount: cartItems.length,
-                subtotal: getSubtotal(cartItems)
-            });
+                    set({
+                        cartItems: items,
+                        itemCount: itemCount,
+                        subtotal: subtotal,
+                        loading: false,
+                    });
+
+                    console.log('Cart fetched successfully:', { items, itemCount, subtotal });
+                    return response.data;
+                } else {
+                    set({ cartItems: [], itemCount: 0, subtotal: 0, loading: false });
+                }
+            }
         } catch (error) {
-            console.error("Error fetching cart:", error);
-            set({ error: "Failed to load cart" });
-        } finally {
-            set({ loading: false });
+            console.error('Error fetching cart:', error);
+            set({ error: 'Failed to load cart', loading: false });
         }
     },
 
-    addToCart: async (product, quantity) => {
-        // Your existing logic
-        // After updating items
-        const updatedItems = [...get().items];
-        // Add your logic for updating items
+    // Increase item quantity
+    increaseItemQuantity: (itemId) => {
+        const updatedItems = get().cartItems.map((item) =>
+            item.id === itemId ? { ...item, quantity: parseInt(item.quantity) + 1 } : item
+        );
+        const newSubtotal = calculateSubtotal(updatedItems);
+        const newItemCount = updatedItems.reduce((count, item) => count + parseInt(item.quantity || 1), 0);
 
         set({
-            items: updatedItems,
-            itemCount: updatedItems.length,
-            subtotal: getSubtotal(updatedItems)
+            cartItems: updatedItems,
+            itemCount: newItemCount,
+            subtotal: newSubtotal,
         });
     },
 
-    // Update other methods similarly...
+    // Decrease item quantity
+    decreaseItemQuantity: (itemId) => {
+        const currentItem = get().cartItems.find((item) => item.id === itemId);
+        if (!currentItem) return;
+
+        let updatedItems;
+        if (parseInt(currentItem.quantity) <= 1) {
+            updatedItems = get().cartItems.filter((item) => item.id !== itemId);
+        } else {
+            updatedItems = get().cartItems.map((item) =>
+                item.id === itemId ? { ...item, quantity: parseInt(item.quantity) - 1 } : item
+            );
+        }
+
+        const newSubtotal = calculateSubtotal(updatedItems);
+        const newItemCount = updatedItems.reduce((count, item) => count + parseInt(item.quantity || 1), 0);
+
+        set({
+            cartItems: updatedItems,
+            itemCount: newItemCount,
+            subtotal: newSubtotal,
+        });
+    },
 }));
 
 export default useCartStore;
