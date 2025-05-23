@@ -18,6 +18,7 @@ const useCartStore = create((set, get) => ({
             itemCount: response.data.items.length 
           });
           return response.data;
+          console.log('Cart API response:');
         }
       }
     } catch (error) {

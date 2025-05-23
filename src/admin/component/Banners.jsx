@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { FaTrash } from 'react-icons/fa';
 import { FiUpload } from 'react-icons/fi';
 import api from '../../utils/axios.js';
@@ -132,6 +132,25 @@ const Banners = () => {
       setLoading(false);
     }
   };
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+
+  // Update time every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, []);
+  const formattedDateTime = `${currentDateTime.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} | ${currentDateTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}`;
+
+  // Get appropriate greeting based on time of day
+  const getGreeting = () => {
+    const hour = currentDateTime.getHours();
+    if (hour < 12) return 'Good Morning!';
+    if (hour < 18) return 'Good Afternoon!';
+    return 'Good Evening!';
+  };
 
   return (
       <div>
@@ -140,7 +159,7 @@ const Banners = () => {
           <div className="flex items-center justify-between px-6 pt-6 mb-6">
             <h2 className="text-2xl font-semibold text-[#333333] mt-[-10px] ml-[-20px]">Banners</h2>
             <span className="text-sm text-gray-500 mt-[-10px] absolute right-8">
-            {new Date().toLocaleDateString()} | {new Date().toLocaleTimeString()} | Good Morning!
+           {formattedDateTime} | {getGreeting()}
           </span>
           </div>
         </div>

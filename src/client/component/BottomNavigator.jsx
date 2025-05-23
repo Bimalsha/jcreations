@@ -12,10 +12,15 @@ function BottomNavigator() {
     const { itemCount, subtotal, fetchCart } = useCartStore();
     const badgeInitialized = useRef(false);
 
-    // Fetch cart data to get the item count
+    // In your useEffect
     useEffect(() => {
-        // Initial fetch
-        fetchCart();
+        // Initial fetch - use async function to properly handle the Promise
+        const loadCart = async () => {
+            await fetchCart();
+            console.log("Subtotal after fetch:", subtotal);
+        };
+
+        loadCart();
 
         // Set up an interval to refresh the cart count periodically
         const intervalId = setInterval(fetchCart, 10000); // Every 10 seconds
@@ -78,13 +83,14 @@ function BottomNavigator() {
                                 }}
                                 transition={{ type: "spring", stiffness: 500, damping: 25 }}
                             >
+
                                 <motion.span
-                                    key={subtotal}
-                                    initial={badgeInitialized.current ? { scale: 0.5, opacity: 0 } : {}}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    transition={{ duration: 0.2 }}
+                                    key={`subtotal-${itemCount}-${subtotal}`}
+                                    initial={badgeInitialized.current ? {scale: 0.5, opacity: 0} : {}}
+                                    animate={{scale: 1, opacity: 1}}
+                                    transition={{duration: 0.2}}
                                 >
-                                    Rs{subtotal}
+                                    Rs {subtotal ? subtotal.toLocaleString() : 0}
                                 </motion.span>
                             </motion.div>
                         )}

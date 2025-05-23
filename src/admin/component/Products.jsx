@@ -295,6 +295,25 @@ function Products() {
         discontinued: 'bg-gray-100 text-gray-700'
     };
 
+    const [currentDateTime, setCurrentDateTime] = useState(new Date());
+
+    // Update time every minute
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentDateTime(new Date());
+        }, 60000);
+
+        return () => clearInterval(timer);
+    }, []);
+    const formattedDateTime = `${currentDateTime.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} | ${currentDateTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}`;
+
+    // Get appropriate greeting based on time of day
+    const getGreeting = () => {
+        const hour = currentDateTime.getHours();
+        if (hour < 12) return 'Good Morning!';
+        if (hour < 18) return 'Good Afternoon!';
+        return 'Good Evening!';
+    };
     return (
         <div className="flex flex-col min-h-[500px]">
             <Toaster
@@ -309,7 +328,7 @@ function Products() {
                             Products
                         </h2>
                         <span className="text-sm text-gray-500 mt-[-10px] absolute right-8">
-                            {new Date().toLocaleDateString()} | {new Date().toLocaleTimeString()} | Good Morning!
+                            {formattedDateTime} | {getGreeting()}
                         </span>
                     </div>
 

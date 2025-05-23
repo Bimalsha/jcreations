@@ -292,11 +292,6 @@ const UpdateProductForm = ({ product, onSuccess }) => {
             return;
         }
 
-        if (!description.trim()) {
-            toast.error("Product description is required");
-            return;
-        }
-
         // Check if there's at least one image
         if (existingImages.length + newImages.length === 0) {
             toast.error("Please add at least one product image");
@@ -320,7 +315,7 @@ const UpdateProductForm = ({ product, onSuccess }) => {
             formData.append('name', name);
             formData.append('category_id', category);
             formData.append('price', price);
-            formData.append('description', description);
+            formData.append('description', description || ''); // Explicitly send empty string for null/undefined descriptions
             formData.append('status', product.status || 'in_stock');
             formData.append('_method', 'PUT'); // Laravel requires this for PUT requests
 
@@ -501,18 +496,16 @@ const UpdateProductForm = ({ product, onSuccess }) => {
                 {/* Product Description */}
                 <div className="transition-all duration-300 hover:shadow-md">
                     <textarea
-                        placeholder="Product Description"
+                        placeholder="Product Description (optional)"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         rows="4"
-                        className="border border-gray-300 rounded-lg p-3 w-full bg-white/70 backdrop-blur-sm transition-all focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                        required
+                        className="border border-gray-300 rounded-lg p-3 w-full bg-white/70  transition-all focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                     />
                 </div>
 
                 {/* Image Upload */}
-                <div
-                    className="bg-white/30 backdrop-blur-sm p-4 rounded-lg border border-gray-200 transition-all duration-300 hover:shadow-md">
+                <div className="bg-white/30 backdrop-blur-sm p-4 rounded-lg border border-gray-200 transition-all duration-300 hover:shadow-md">
                     <p className="text-sm mb-3 text-gray-600 font-medium">
                         Product Images <span className="text-xs text-gray-400">(At least 1 image required, max 3)</span>
                     </p>
@@ -578,13 +571,6 @@ const UpdateProductForm = ({ product, onSuccess }) => {
                         </p>
                     )}
                 </div>
-
-                {/* Error message if any */}
-                {error && (
-                    <div className="text-red-500 bg-red-50 p-3 rounded-lg text-sm">
-                        {error}
-                    </div>
-                )}
 
                 {/* Buttons */}
                 <div className="flex gap-3 pt-4">

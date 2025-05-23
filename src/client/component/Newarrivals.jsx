@@ -13,7 +13,7 @@ function Newarrivals() {
                 setLoading(true);
                 // Fetch 10 products from the API
                 const response = await api.get('/products/8');
-                console.log('New arrivals data:', response.data);
+
                 setProducts(response.data);
                 setError(null);
             } catch (err) {

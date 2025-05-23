@@ -85,36 +85,50 @@ function Setting() {
         fetchMobileNumber();
     }, []);
 
-    // Save contact number
+
     const saveContactNumber = async () => {
-        if (!contactNumber.trim()) {
+        // Validate input
+        if (!contactNumber || !contactNumber.trim()) {
             toast.error('Please enter a valid contact number');
             return;
         }
 
         setUpdatingContact(true);
         try {
-            // API expects the number in both URL and request body
-            const updatedData = {
-                number: contactNumber
+            // Prepare payload
+            const payload = {
+                number: contactNumber.trim()
             };
-            console.log('Updated data:', updatedData);
 
-            // Call API with correct URL structure including the mobileNumber parameter
-            const response = await api.put(`/mobile-numbers/${contactNumber}`, updatedData);
+            console.log('Updating contact number:', contactNumber);
 
-            // Handle the expected response format
-            if (response.data && response.data.message) {
-                toast.success(response.data.message);
-            } else {
-                toast.success('Contact number updated successfully');
-            }
+            // Make API request without any authentication
+            const response = await api.put(
+                `/admin/mobile-numbers/1`,
+                payload,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                }
+            );
 
-            // Refresh the data from server
-            await fetchMobileNumber(contactNumber);
+            console.log('API response:', response.data);
+            toast.success(response.data?.message || 'Contact number updated successfully');
+            await fetchMobileNumber();
         } catch (err) {
-            toast.error('Failed to update contact number');
-            console.error(err);
+            console.error('Error updating contact number:', err);
+
+            if (err.response) {
+                console.error('Status:', err.response.status);
+                console.error('Response data:', err.response.data);
+                toast.error(err.response.data?.message || 'Failed to update contact number');
+            } else if (err.request) {
+                toast.error('Server did not respond. Please check your connection.');
+            } else {
+                toast.error(`Error: ${err.message}`);
+            }
         } finally {
             setUpdatingContact(false);
         }
