@@ -10,7 +10,6 @@ import useCartStore from '../../stores/cartStore';
 
 function Header() {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [visible, setVisible] = useState(true);
     const [scrollPosition, setScrollPosition] = useState(0);
     const [contactNumber, setContactNumber] = useState('070 568 7994');
 
@@ -18,7 +17,6 @@ function Header() {
     const { itemCount, fetchCart } = useCartStore();
 
     // Fetch contact numbers
-    // Fetch contact numbers - updated with proper error handling and debugging
     const fetchContactNumbers = async () => {
         try {
             // Use complete URL if needed (adjust according to your API)
@@ -51,6 +49,7 @@ function Header() {
             }
         }
     };
+
     // Fetch cart data and contact numbers
     useEffect(() => {
         fetchCart();
@@ -61,31 +60,10 @@ function Header() {
         return () => clearInterval(intervalId);
     }, [fetchCart]);
 
-    // Improved scroll handling
+    // Track scroll for styling purposes
     useEffect(() => {
-        let lastScrollY = window.scrollY;
-        let ticking = false;
-
         const handleScroll = () => {
-            if (!ticking) {
-                window.requestAnimationFrame(() => {
-                    const currentScrollY = window.scrollY;
-
-                    // Hide when scrolling down (beyond 20px)
-                    // Show when scrolling up or at the top
-                    if (currentScrollY > 20 && currentScrollY > lastScrollY) {
-                        setVisible(false);
-                    } else {
-                        setVisible(true);
-                    }
-
-                    lastScrollY = currentScrollY;
-                    setScrollPosition(currentScrollY);
-                    ticking = false;
-                });
-
-                ticking = true;
-            }
+            setScrollPosition(window.scrollY);
         };
 
         window.addEventListener('scroll', handleScroll, { passive: true });
@@ -103,9 +81,9 @@ function Header() {
     return (
         <>
             <header
-                className={`flex justify-center w-full px-4 z-50 py-3 bg-white/95 backdrop-blur-sm fixed transition-all duration-300 ${
-                    visible ? 'shadow-lg translate-y-0' : '-translate-y-full shadow-none'
-                } ${scrollPosition > 50 ? 'rounded-b-xl' : ''}`}
+                className={`flex justify-center w-full px-4 z-50 py-3 bg-white/95 backdrop-blur-sm shadow-lg transition-all duration-300 ${
+                    scrollPosition > 50 ? 'rounded-b-xl' : ''
+                }`}
             >
                 {/* Logo */}
                 <div className={'flex flex-col w-full lg:max-w-7xl '}>
