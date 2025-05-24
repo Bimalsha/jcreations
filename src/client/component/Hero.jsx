@@ -1,9 +1,57 @@
-import React from 'react';
-import { motion } from "framer-motion"; // Fixed import
+import React, { useState, useEffect } from 'react';
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { FaArrowRightLong } from "react-icons/fa6";
+import api from '../../utils/axios.js';
 
 function Hero() {
+    const [banner, setBanner] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    const storageUrl = import.meta.env.VITE_STORAGE_URL;
+
+    // Fetch banner on component mount
+    useEffect(() => {
+        const fetchBanner = async () => {
+            try {
+                const response = await api.get('/banner');
+                if (response.status === 200 && response.data) {
+                    setBanner(response.data);
+                }
+            } catch (err) {
+                console.error('Error fetching banner:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchBanner();
+    }, []);
+
+// Function to scroll to products section with improved reliability
+    const scrollToProducts = () => {
+        // Short timeout to ensure DOM is fully loaded
+        setTimeout(() => {
+            // Try to find the products section - check for multiple possible IDs
+            const productsSection =
+                document.getElementById('products') ||
+                document.getElementById('all-products') ||
+                document.querySelector('.products-section');
+
+            if (productsSection) {
+                productsSection.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            } else {
+                // Fallback: scroll down a reasonable amount if section not found
+                window.scrollTo({
+                    top: window.innerHeight,
+                    behavior: 'smooth'
+                });
+            }
+        }, 100);
+    };
     // Define animation variants
     const container = {
         hidden: { opacity: 0 },
@@ -27,7 +75,7 @@ function Hero() {
 
     return (
         <>
-            <section className="pt-16 lg:pt-12 flex justify-center">
+            <section className="flex justify-center">
                 <motion.div
                     className={'max-w-7xl w-full lg:flex md:flex justify-between hidden px-2'}
                     initial="hidden"
@@ -86,8 +134,9 @@ function Hero() {
                                 whileHover={{scale: 1.05}}
                                 whileTap={{scale: 0.95}}
                             >
-                                <Link to={'/'}
-                                      className={'flex items-center gap-2 bg-[#F7A313] text-white rounded-bl-3xl rounded-tr-3xl justify-center px-6 py-3 mt-4 w-56'}>
+                                <button
+                                    onClick={scrollToProducts}
+                                    className={'flex items-center gap-2 bg-[#F7A313] text-white rounded-bl-3xl rounded-tr-3xl justify-center px-6 py-3 mt-4 w-56 cursor-pointer'}>
                                     Order Now
                                     <motion.div
                                         animate={{
@@ -101,7 +150,7 @@ function Hero() {
                                     >
                                         <FaArrowRightLong/>
                                     </motion.div>
-                                </Link>
+                                </button>
                             </motion.div>
                         </motion.div>
                     </div>
@@ -122,14 +171,26 @@ function Hero() {
                         />
                     </motion.div>
                 </motion.div>
-                <div className={'p-2 lg:hidden md:hidden w-full pt-20'}>
+                <div className={'px-2 lg:hidden md:hidden w-full -mt-8'}>
                     <div className="w-full rounded-3xl shadow-lg overflow-hidden">
                         <div className="relative">
-                            <img
-                                src="/hero/home%20back.webp"
-                                alt="Chocolate Cake"
-                                className="w-full h-[250px] object-cover rounded-3xl"
-                            />
+                            {loading ? (
+                                // Loading state
+                                <div className="w-full h-[250px] bg-gray-200 animate-pulse rounded-3xl flex items-center justify-center">
+                                    <span className="text-gray-400">Loading banner...</span>
+                                </div>
+                            ) : (
+                                <img
+                                    src={banner?.image_path ? `${storageUrl}/${banner.image_path}` : "/hero/home back.webp"}
+                                    alt="Banner"
+                                    className="w-full h-[250px] object-cover rounded-3xl"
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = "/hero/home back.webp";
+                                        console.error("Failed to load banner image");
+                                    }}
+                                />
+                            )}
                             <div
                                 className="absolute top-8 right-8 bg-white p-2 rounded-lg shadow-md text-sm font-semibold text-gray-700">
                                 <div
@@ -137,17 +198,18 @@ function Hero() {
                                     %
                                 </div>
                                 <span className="text-2xl font-bold text-[#F7A313]">10%</span>
-                                <p className="text-sm font-medium">Discount <br/>for 2 Orders</p>
+                                <p className="text-sm font-medium">Discount <br/></p>
                             </div>
                             <div
                                 className="absolute bottom-4 left-4 p-2 rounded-lg shadow-md text-sm font-semibold text-gray-700">
                                 <span className={'font-bold leading-tight text-white mt-6 0 text-2xl'}>Be The <span
                                     className={'text-[#F7A313]'}>First</span><br/> Delivery &<br/> Easy Pick Up</span>
                             </div>
-                            <Link to={'/'}
-                                  className="absolute bottom-4 right-4 bg-[#F7A313] p-2 px-4 rounded-tl-3xl text-sm rounded-br-3xl text-white flex items-center gap-2">
+                            <button
+                                onClick={scrollToProducts}
+                                className="absolute bottom-4 right-4 bg-[#F7A313] p-2 px-4 rounded-tl-3xl text-sm rounded-br-3xl text-white flex items-center gap-2 cursor-pointer">
                                 Order Now <FaArrowRightLong/>
-                            </Link>
+                            </button>
                         </div>
                     </div>
                 </div>
