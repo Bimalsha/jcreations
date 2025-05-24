@@ -18,7 +18,6 @@ const useCartStore = create((set, get) => ({
             itemCount: response.data.items.length 
           });
           return response.data;
-          console.log('Cart API response:');
         }
       }
     } catch (error) {
@@ -55,8 +54,24 @@ const useCartStore = create((set, get) => ({
       
       set({ cartItems: updatedItems });
     }
+  },
+
+  // Calculate subtotal (sum of all items with discounts applied)
+  getSubtotal: () => {
+    return get().cartItems.reduce((total, item) => {
+      // Calculate effective price with discount
+      const effectivePrice = item.product?.discount_percentage > 0
+        ? item.product.price * (1 - item.product.discount_percentage / 100)
+        : item.product?.price || 0;
+      
+      return total + (effectivePrice * item.quantity);
+    }, 0);
+  },
+
+  // Calculate total (same as subtotal since we're not including shipping)
+  getTotal: () => {
+    return get().getSubtotal();
   }
 }));
-
 
 export default useCartStore;
