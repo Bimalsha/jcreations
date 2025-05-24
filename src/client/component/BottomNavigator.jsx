@@ -1,33 +1,25 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from "react-router-dom";
 import { motion } from 'framer-motion';
-// Import the cart store
 import useCartStore from '../../stores/cartStore';
+
+
 
 function BottomNavigator() {
     const location = useLocation();
     const currentPath = location.pathname;
-
-    // Use cart store instead of local state
-    const { itemCount, subtotal, fetchCart } = useCartStore();
     const badgeInitialized = useRef(false);
-
-    // In your useEffect
+    
+    // Get cart data and calculation functions from the store
+    const { cartItems, itemCount, getSubtotal } = useCartStore();
+    
+    // Track the subtotal in component state
+    const [subtotal, setSubtotal] = useState(0);
+    
+    // Update subtotal whenever cart changes
     useEffect(() => {
-        // Initial fetch - use async function to properly handle the Promise
-        const loadCart = async () => {
-            await fetchCart();
-            console.log("Subtotal after fetch:", subtotal);
-        };
-
-        loadCart();
-
-        // Set up an interval to refresh the cart count periodically
-        const intervalId = setInterval(fetchCart, 10000); // Every 10 seconds
-
-        return () => clearInterval(intervalId);
-    }, [fetchCart]);
-
+        setSubtotal(getSubtotal());
+    }, [cartItems, getSubtotal]);
 
     return (
         <div className="fixed bottom-0 left-0 z-50 w-full h-20">
@@ -74,7 +66,7 @@ function BottomNavigator() {
                         {/* Cart badge - now showing subtotal instead of count */}
                         {itemCount > 0 && (
                             <motion.div
-                                className="absolute -top-2 -right-2 bg-[#F7A313] text-black text-[9px] font-bold rounded-full px-2 py-1 min-w-[32px] text-center"
+                                className="absolute -top-3 -right-6 bg-[#F7A313] text-black text-[9px] font-bold rounded-full px-2 py-1 min-w-[32px] text-center"
                                 initial={badgeInitialized.current ? { scale: 1 } : { scale: 0 }}
                                 animate={{ scale: 1 }}
                                 key={badgeInitialized.current ? undefined : "initial-badge"}
@@ -170,4 +162,4 @@ function BottomNavigator() {
     )
 }
 
-export default BottomNavigator
+export default BottomNavigator;
