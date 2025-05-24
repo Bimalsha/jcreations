@@ -351,61 +351,17 @@ function Search({ isOpen, onClose, initialCategory }) {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 pb-4">
                                             {/* Category filter */}
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                                                <select
-                                                    value={categoryId}
-                                                    onChange={(e) => setCategoryId(e.target.value)}
-                                                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
-                                                >
-                                                    <option value="">All Categories</option>
-                                                    {categories.map(category => (
-                                                        <option key={category.id} value={category.id}>
-                                                            {category.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                                {/* Category filter content */}
                                             </div>
 
                                             {/* Status filter */}
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Availability</label>
-                                                <select
-                                                    value={status}
-                                                    onChange={(e) => setStatus(e.target.value)}
-                                                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
-                                                >
-                                                    <option value="">All Products</option>
-                                                    <option value="in_stock">In Stock</option>
-                                                    <option value="out_of_stock">Out of Stock</option>
-                                                </select>
+                                                {/* Status filter content */}
                                             </div>
 
                                             {/* Price range filter */}
                                             <div className="md:col-span-2">
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Price Range: Rs.{priceRange[0]} - Rs.{priceRange[1]}
-                                                </label>
-                                                <div className="flex items-center gap-4">
-                                                    <input
-                                                        type="number"
-                                                        value={priceRange[0]}
-                                                        onChange={(e) => handlePriceChange(e, 0)}
-                                                        placeholder="Min"
-                                                        min="0"
-                                                        max="10000"
-                                                        className="w-1/2 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
-                                                    />
-                                                    <span className="text-gray-500">to</span>
-                                                    <input
-                                                        type="number"
-                                                        value={priceRange[1]}
-                                                        onChange={(e) => handlePriceChange(e, 1)}
-                                                        placeholder="Max"
-                                                        min="0"
-                                                        max="10000"
-                                                        className="w-1/2 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F7A313] focus:border-transparent"
-                                                    />
-                                                </div>
+                                                {/* Price range filter content */}
                                             </div>
                                         </div>
 
@@ -439,8 +395,8 @@ function Search({ isOpen, onClose, initialCategory }) {
                             </AnimatePresence>
                         </div>
 
-                        {/* Results section */}
-                        <div className="flex-1 overflow-auto p-5">
+                        {/* Results section - Added pb-24 to create space for bottom navigation */}
+                        <div className="flex-1 overflow-auto p-5 pb-24">
                             {/* Recent searches */}
                             {!searchQuery && recentSearches.length > 0 && (
                                 <div className="mb-6">
@@ -475,9 +431,7 @@ function Search({ isOpen, onClose, initialCategory }) {
                                         {products.map((product, index) => {
                                             console.log(`Rendering product ${index}:`, product);
                                             return (
-                                                <div key={product.id || `product-${index}`} className="w-full">
-                                                    <SearchItem product={product} />
-                                                </div>
+                                                <SearchItem key={product.id || index} product={product} />
                                             );
                                         })}
                                     </div>
@@ -492,7 +446,7 @@ function Search({ isOpen, onClose, initialCategory }) {
                                                 onClick={handleLoadMore}
                                                 whileHover={{ scale: 1.03 }}
                                                 whileTap={{ scale: 0.97 }}
-                                                className="px-6 py-2 border border-[#F7A313] text-[#F7A313] rounded-full hover:bg-[#FEF3E0]"
+                                                className="px-4 py-2 bg-gray-100 rounded-full text-gray-700 hover:bg-gray-200"
                                             >
                                                 Load More
                                             </motion.button>
